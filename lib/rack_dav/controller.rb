@@ -183,7 +183,7 @@ module RackDAV
       lockscope = request_match("/lockinfo/lockscope/*")[0].name
       locktype = request_match("/lockinfo/locktype/*")[0].name
       owner = request_match("/lockinfo/owner/href")[0]
-      locktoken = "opaquelocktoken:" + sprintf('%x-%x', object_id.abs, Time.now.to_i)
+      locktoken = "opaquelocktoken:" + sprintf('%x-%x-%s', Time.now.to_i, Time.now.sec, resource.etag)
 
       response['Lock-Token'] = locktoken
 
