@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'rack_dav'
+
+app = Rack::Builder.new do
+  use Rack::ShowExceptions
+  use Rack::CommonLogger
+  use Rack::Reloader
+  use Rack::Lint
+  
+  run RackDAV::Handler.new
+
+end.to_app
+
+Rack::Handler::WEBrick.run(app, :Port => 3000)
