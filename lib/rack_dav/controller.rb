@@ -140,7 +140,7 @@ module RackDAV
     end
     
     def propfind
-      raise Conflict if not resource.exist?
+      raise NotFound if not resource.exist?
 
       if not request_match("/propfind/allprop").empty?
         names = resource.property_names
@@ -160,7 +160,7 @@ module RackDAV
     end
     
     def proppatch
-      raise Conflict if not resource.exist?
+      raise NotFound if not resource.exist?
 
       prop_rem = request_match("/propertyupdate/remove/prop/*").map { |e| [e.name] }
       prop_set = request_match("/propertyupdate/set/prop/*").map { |e| [e.name, e.text] }
