@@ -26,7 +26,7 @@ module RackDAV
     end    
     
     def options
-      response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE'
+      response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE,LOCK,UNLOCK'
       response["Dav"] = "1"
       response["Ms-Author-Via"] = "DAV"
     end
@@ -177,6 +177,40 @@ module RackDAV
       resource.save
     end
 
+    def lock
+      raise NotFound if not resource.exist?
+
+      lockscope = request_match("/lockinfo/lockscope/*")[0].name
+      locktype = request_match("/lockinfo/locktype/*")[0].name
+      owner = request_match("/lockinfo/owner/href")[0]
+      locktoken = "opaquelocktoken:" + sprintf('%x-%x', object_id.abs, Time.now.to_i)
+
+      response['Lock-Token'] = locktoken
+
+      render_xml do |xml|
+        xml.prop('xmlns:D' => "DAV:") do
+          xml.lockdiscovery do
+            xml.activelock do
+              xml.lockscope { xml.tag! lockscope }
+              xml.locktype { xml.tag! locktype }
+              xml.depth 'Infinity'
+              if owner
+                xml.owner { xml.href owner.text }
+              end
+              xml.timeout "Second-60"
+              xml.locktoken do
+                xml.href locktoken
+              end
+            end
+          end
+        end
+      end
+    end
+
+    def unlock
+      raise NoContent
+    end
+
     # ************************************************************
     # private methods
     
@@ -274,18 +308,27 @@ module RackDAV
     def request_match(pattern)
       REXML::XPath::match(request_document, pattern, '' => 'DAV:')
     end
-    
-    def multistatus
+
+    def render_xml
       xml = Builder::XmlMarkup.new(:indent => 2)
-      xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"      
+      xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+      
       xml.namespace('D') do
+        yield xml
+      end
+      
+      response.body = xml.target!
+      response["Content-Type"] = 'text/xml; charset="utf-8"'
+      response["Content-Length"] = response.body.size.to_s
+    end
+      
+    def multistatus
+      render_xml do |xml|
         xml.multistatus('xmlns:D' => "DAV:") do
           yield xml
         end
       end
-      response.body = xml.target!
-      response["Content-Type"] = 'text/xml; charset="utf-8"'
-      response["Content-Length"] = response.body.size.to_s
+      
       response.status = MultiStatus
     end
     

@@ -6,7 +6,7 @@ require 'fileutils'
 
 describe RackDAV::Handler do
   DOC_ROOT = File.expand_path(File.dirname(__FILE__) + '/htdocs')
-  METHODS = %w(GET PUT POST DELETE PROPFIND PROPPATCH MKCOL COPY MOVE OPTIONS HEAD)  
+  METHODS = %w(GET PUT POST DELETE PROPFIND PROPPATCH MKCOL COPY MOVE OPTIONS HEAD LOCK UNLOCK)  
   
   before do
     FileUtils.mkdir(DOC_ROOT) unless File.exists?(DOC_ROOT)
@@ -99,12 +99,12 @@ describe RackDAV::Handler do
   it 'should create a resource and allow its retrieval' do
     put('/test', :input => 'body').should be_ok    
     get('/test').should be_ok
-    response.body.should eql('body')
+    response.body.should == 'body'
   end
   it 'should create and find a url with escaped characters' do
     put(url_escape('/a b'), :input => 'body').should be_ok    
     get(url_escape('/a b')).should be_ok
-    response.body.should eql('body')
+    response.body.should == 'body'
   end
   
   it 'should delete a single resource' do
@@ -141,30 +141,32 @@ describe RackDAV::Handler do
   it 'should copy a single resource' do
     put('/test', :input => 'body').should be_ok
     copy('/test', 'HTTP_DESTINATION' => '/copy').should be_created
-    get('/copy').body.should eql('body')
+    get('/copy').body.should == 'body'
   end
 
   it 'should copy a resource with escaped characters' do
     put(url_escape('/a b'), :input => 'body').should be_ok
     copy(url_escape('/a b'), 'HTTP_DESTINATION' => url_escape('/a c')).should be_created
     get(url_escape('/a c')).should be_ok
-    response.body.should eql('body')
+    response.body.should == 'body'
   end
   
   it 'should deny a copy without overwrite' do
     put('/test', :input => 'body').should be_ok
     put('/copy', :input => 'copy').should be_ok
-    copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F')    
-    multistatus_response('/href').first.text.should eql('http://localhost/test')
+    copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F')
+    
+    multistatus_response('/href').first.text.should == 'http://localhost/test'
     multistatus_response('/status').first.text.should match(/412 Precondition Failed/)
-    get('/copy').body.should eql('copy')
+    
+    get('/copy').body.should == 'copy'
   end
   
   it 'should allow a copy with overwrite' do
     put('/test', :input => 'body').should be_ok
     put('/copy', :input => 'copy').should be_ok
     copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'T').should be_no_content
-    get('/copy').body.should eql('body')
+    get('/copy').body.should == 'body'
   end
   
   it 'should copy a collection' do
@@ -183,8 +185,8 @@ describe RackDAV::Handler do
     propfind('/copy', :input => propfind_xml(:resourcetype))
     multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty    
     
-    get('/copy/a').body.should eql('A')
-    get('/copy/b').body.should eql('B')
+    get('/copy/a').body.should == 'A'
+    get('/copy/b').body.should == 'B'
   end
   
   it 'should move a collection recursively' do
@@ -196,8 +198,8 @@ describe RackDAV::Handler do
     propfind('/move', :input => propfind_xml(:resourcetype))
     multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty    
     
-    get('/move/a').body.should eql('A')
-    get('/move/b').body.should eql('B')
+    get('/move/a').body.should == 'A'
+    get('/move/b').body.should == 'B'
     get('/folder/a').should be_not_found
     get('/folder/b').should be_not_found
   end
@@ -209,7 +211,7 @@ describe RackDAV::Handler do
   end
   
   it 'should not find properties for nonexistent resources' do
-    propfind('/non').should be_conflict
+    propfind('/non').should be_not_found
   end
   
   it 'should find all properties' do
@@ -221,7 +223,7 @@ describe RackDAV::Handler do
     
     propfind('http://localhost/', :input => xml)
     
-    multistatus_response('/href').first.text.strip.should eql('http://localhost/')
+    multistatus_response('/href').first.text.strip.should == 'http://localhost/'
 
     props = %w(creationdate displayname getlastmodified getetag resourcetype getcontenttype getcontentlength)
     props.each do |prop|
@@ -233,8 +235,36 @@ describe RackDAV::Handler do
     put('/test.html', :input => '<html/>').should be_ok    
     propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
    
-    multistatus_response('/propstat/prop/getcontenttype').first.text.should eql('text/html')
-    multistatus_response('/propstat/prop/getcontentlength').first.text.should eql('7')
+    multistatus_response('/propstat/prop/getcontenttype').first.text.should == 'text/html'
+    multistatus_response('/propstat/prop/getcontentlength').first.text.should == '7'
   end
 
+  it 'should lock a resource' do
+    put('/test', :input => 'body').should be_ok
+    
+    xml = render do |xml|
+      xml.lockinfo('xmlns:d' => "DAV:") do
+        xml.lockscope { xml.exclusive }
+        xml.locktype { xml.write }
+        xml.owner { xml.href "http://test.de/" }
+      end      
+    end
+
+    lock('/test', :input => xml)
+    
+    response.should be_ok
+
+    match = lambda do |pattern|
+      REXML::XPath::match(response_xml, "/prop/lockdiscovery/activelock" + pattern, '' => 'DAV:')
+    end
+    
+    match[''].should_not be_empty
+
+    match['/locktype'].should_not be_empty
+    match['/lockscope'].should_not be_empty
+    match['/depth'].should_not be_empty
+    match['/owner'].should_not be_empty
+    match['/timeout'].should_not be_empty
+    match['/locktoken'].should_not be_empty
+  end
 end
