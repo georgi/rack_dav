@@ -20,7 +20,7 @@ module RackDAV
       rescue HTTPStatus::Status => status
         response.status = status.code
         response.body = status.message if status.code >= 300
-        response['Content-Length'] = response.body.size
+        response['Content-Length'] = response.body.size.to_s
       end
 
       response.status = response.status ? response.status.to_i : 200
