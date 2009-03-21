@@ -75,11 +75,9 @@ module RackDAV
         end
         response['Content-Length'] = response.body.size.to_s
       else
-        open(file_path, "rb") do |file|
-          while part = file.read(8192)
-            response.write(part)
-          end
-        end
+        file = Rack::File.new(nil)
+        file.path = file_path
+        response.body = file
       end
     end
 
