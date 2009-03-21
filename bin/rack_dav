@@ -13,4 +13,8 @@ app = Rack::Builder.new do
 
 end.to_app
 
-Rack::Handler::WEBrick.run(app, :Port => 3000)
+begin
+  Rack::Handler::Mongrel.run(app, :Port => 3000)
+rescue
+  Rack::Handler::WEBrick.run(app, :Port => 3000)
+end

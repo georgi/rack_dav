@@ -136,15 +136,21 @@ module RackDAV
   
     # Write to this resource from given IO.
     def write(io)
-      open(file_path, "wb") do |file|
+      tempfile = "#{file_path}.#{Process.pid}.#{object_id}"
+      
+      open(tempfile, "wb") do |file|
         while part = io.read(8192)
           file << part
         end
       end
+
+      File.rename(tempfile, file_path)      
+    ensure
+      File.unlink(tempfile) if File.exist?(tempfile)
     end
     
     private
-    
+
     def root
       @options[:root]
     end
