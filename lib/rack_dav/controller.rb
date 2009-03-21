@@ -287,8 +287,6 @@ module RackDAV
     def map_exceptions
       yield
     rescue
-      p $!
-      p $!.backtrace
       case $!
       when URI::InvalidURIError then raise BadRequest
       when Errno::EACCES then raise Forbidden
