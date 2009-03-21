@@ -146,7 +146,7 @@ module RackDAV
 
       File.rename(tempfile, file_path)      
     ensure
-      File.unlink(tempfile) if File.exist?(tempfile)
+      File.unlink(tempfile) rescue nil
     end
     
     private
