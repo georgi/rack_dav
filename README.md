@@ -1,5 +1,5 @@
-RackDAV - Web Authoring for Rack and Rails
-==========================================
+RackDAV - Web Authoring for Rack
+================================
 
 RackDAV is Handler for [Rack][1], which allows content authoring over
 HTTP. RackDAV brings its own implentation for authoring files, but
