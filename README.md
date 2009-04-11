@@ -2,8 +2,8 @@ RackDAV - Web Authoring for Rack
 ================================
 
 RackDAV is Handler for [Rack][1], which allows content authoring over
-HTTP. RackDAV brings its own implentation for authoring files, but
-other resource types are possible by subclassing RackDAV::Resource.
+HTTP. RackDAV brings its own file backend, but other backends are
+possible by subclassing RackDAV::Resource.
 
 ## Install
 
@@ -15,12 +15,12 @@ Just install the gem from github:
 ## Quickstart
 
 If you just want to share a folder over WebDAV, you can just start a
-simple server with this:
+simple server with:
 
     $ rack_dav
 
 This will start a WEBrick server on port 3000, which you can connect
-to withou authentication.
+to without authentication.
 
 ## Rack Handler
 
@@ -36,48 +36,62 @@ script looks like this:
 
 ## Implementing your own WebDAV resource
 
-You have to subclass RackDAV::Resource and implement following
-methods:
-        
-* _children_: If this is a collection, return the child resources.
+RackDAV::Resource is an abstract base class and defines an interface
+for accessing resources.
 
-* _collection?_: Is this resource a collection?
+Each resource will be initialized with a path, which should be used to
+find the real resource.
 
-* _exist?; end_: Does this recource exist?
-    
-* _creation\_date: Return the creation time.
-
-* _last_modified: Return the time of last modification.
-    
-* _last_modified=(time): Set the time of last modification.
-
-* _etag_: Return an Etag, an unique hash value for this resource.
-
-* _content_type_: Return the mime type of this resource.
-
-* _content\_length_: Return the size in bytes for this resource.
-
-* _get(request, response)_: Write the content of the resource to the response.body.
-
-* _put(request, response)_: Save the content of the request.body.
-
-* _post(request, response)_: Usually forbidden.
-
-* _delete_: Delete this resource.
-
-* _copy(dest)_: Copy this resource to given destination resource.
-
-* _move(dest)_: Move this resource to given destination resource.
-    
-* _make\_collection_: Create this resource as collection.
-
-
-Each resource has a path attribute, which you must use to find and
-manipulate the real resource.
-
-Finally you have to tell RackDAV::Handler, what class it should use:
+RackDAV::Handler needs to be initialized with the actual resource class:
 
     RackDAV::Handler.new(:resource_class => MyResource)
+
+RackDAV needs some information about the resources, so you have to
+implement following methods:
+        
+* __children__: If this is a collection, return the child resources.
+
+* __collection?__: Is this resource a collection?
+
+* __exist?__: Does this recource exist?
+    
+* __creation\_date__: Return the creation time.
+
+* __last\_modified__: Return the time of last modification.
+    
+* __last\_modified=(time)__: Set the time of last modification.
+
+* __etag__: Return an Etag, an unique hash value for this resource.
+
+* __content_type__: Return the mime type of this resource.
+
+* __content\_length__: Return the size in bytes for this resource.
+
+
+Most importantly you have to implement the actions, which are called
+to retrieve and change the resources:
+
+* __get(request, response)__: Write the content of the resource to the response.body.
+
+* __put(request, response)__: Save the content of the request.body.
+
+* __post(request, response)__: Usually forbidden.
+
+* __delete__: Delete this resource.
+
+* __copy(dest)__: Copy this resource to given destination resource.
+
+* __move(dest)__: Move this resource to given destination resource.
+    
+* __make\_collection__: Create this resource as collection.
+
+
+Note, that it is generally possible, that a resource object is
+instantiated for a not yet existing resource.
+
+For inspiration you should have a look at the FileResource
+implementation. Please let me now, if you are going to implement a new
+type of resource.
 
 
 ### RackDAV on GitHub
