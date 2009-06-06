@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'builder'
 require 'time'
+require 'uri'
 require 'rexml/document'
 require 'webrick/httputils'
 
