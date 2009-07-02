@@ -1,5 +1,6 @@
-RackDAV - Web Authoring for Rack
-================================
+---
+title: RackDAV - Web Authoring for Rack
+---
 
 RackDAV is Handler for [Rack][1], which allows content authoring over
 HTTP. RackDAV brings its own file backend, but other backends are
@@ -27,6 +28,8 @@ to without authentication.
 Using RackDAV inside a rack application is quite easy. A simple rackup
 script looks like this:
 
+    @@ruby
+
     require 'rubygems'
     require 'rack_dav'
      
@@ -43,6 +46,8 @@ Each resource will be initialized with a path, which should be used to
 find the real resource.
 
 RackDAV::Handler needs to be initialized with the actual resource class:
+
+    @@ruby
 
     RackDAV::Handler.new(:resource_class => MyResource)
 

@@ -42,7 +42,7 @@ describe RackDAV::Handler do
     end
     xml.target!
   end
-
+ 
   def url_escape(string)
     string.gsub(/([^ a-zA-Z0-9_.-]+)/n) do
       '%' + $1.unpack('H2' * $1.size).join('%').upcase

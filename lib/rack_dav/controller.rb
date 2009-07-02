@@ -10,7 +10,7 @@ module RackDAV
       @response = response
       @options = options
       @resource = resource_class.new(url_unescape(request.path_info), @options)
-      raise Forbidden if request.path_info.include?('..')
+      raise Forbidden if request.path_info.include?('../')
     end
     
     def url_escape(s)
