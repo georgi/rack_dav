@@ -27,7 +27,7 @@ module RackDAV
     
     def options
       response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE,LOCK,UNLOCK'
-      response["Dav"] = "2"
+      response["Dav"] = "1,2"
       response["Ms-Author-Via"] = "DAV"
     end
     
@@ -145,6 +145,7 @@ module RackDAV
         names = resource.property_names
       else
         names = request_match("/propfind/prop/*").map { |e| e.name }
+        names = resource.property_names
         raise BadRequest if names.empty?
       end
 
