@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'rack_dav'
-  s.version = '0.1.2'
+  s.version = '0.1.3'
   s.summary = 'WebDAV handler for Rack'
   s.author = 'Matthias Georgi'
   s.email = 'matti.georgi@gmail.com'

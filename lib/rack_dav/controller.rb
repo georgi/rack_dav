@@ -145,14 +145,15 @@ module RackDAV
         names = resource.property_names
       else
         names = request_match("/propfind/prop/*").map { |e| e.name }
-        names = resource.property_names
+        names = resource.property_names if names.empty?
         raise BadRequest if names.empty?
       end
 
       multistatus do |xml|
         for resource in find_resources
+          resource.path.gsub!(/\/\//, '/')
           xml.response do
-            xml.href "http://#{host}#{url_escape resource.path}"
+          	xml.href "http://#{host}#{url_escape resource.path}"
             propstats xml, get_properties(resource, names)
           end
         end
