@@ -2,7 +2,7 @@ module RackDAV
 
   class FileResource < Resource
     include WEBrick::HTTPUtils
-    
+
     # If this is a collection, return the child resources.
     def children
       Dir[file_path + '/*'].map do |path|
@@ -19,7 +19,7 @@ module RackDAV
     def exist?
       File.exist?(file_path)
     end
-    
+
     # Return the creation time.
     def creation_date
       stat.ctime
@@ -29,7 +29,7 @@ module RackDAV
     def last_modified
       stat.mtime
     end
-    
+
     # Set the time of last modification.
     def last_modified=(time)
       File.utime(Time.now, time, file_path)
@@ -54,7 +54,7 @@ module RackDAV
     def content_type
       if stat.directory?
         "text/html"
-      else 
+      else
         mime_type(file_path, DefaultMimeTypes)
       end
     end
@@ -87,14 +87,14 @@ module RackDAV
     def put(request, response)
       write(request.body)
     end
-    
+
     # HTTP POST request.
     #
     # Usually forbidden.
     def post(request, response)
       raise HTTPStatus::Forbidden
     end
-    
+
     # HTTP DELETE request.
     #
     # Delete this resource.
@@ -105,7 +105,7 @@ module RackDAV
         File.unlink(file_path)
       end
     end
-    
+
     # HTTP COPY request.
     #
     # Copy this resource to given destination resource.
@@ -118,7 +118,7 @@ module RackDAV
         end
       end
     end
-  
+
     # HTTP MOVE request.
     #
     # Move this resource to given destination resource.
@@ -126,29 +126,29 @@ module RackDAV
       copy(dest)
       delete
     end
-    
+
     # HTTP MKCOL request.
     #
     # Create this resource as collection.
     def make_collection
       Dir.mkdir(file_path)
     end
-  
+
     # Write to this resource from given IO.
     def write(io)
       tempfile = "#{file_path}.#{Process.pid}.#{object_id}"
-      
+
       open(tempfile, "wb") do |file|
         while part = io.read(8192)
           file << part
         end
       end
 
-      File.rename(tempfile, file_path)      
+      File.rename(tempfile, file_path)
     ensure
       File.unlink(tempfile) rescue nil
     end
-    
+
     private
 
     def root

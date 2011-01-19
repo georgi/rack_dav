@@ -8,7 +8,7 @@ app = Rack::Builder.new do
   use Rack::CommonLogger
   use Rack::Reloader
   use Rack::Lint
-  
+
   run RackDAV::Handler.new
 
 end.to_app

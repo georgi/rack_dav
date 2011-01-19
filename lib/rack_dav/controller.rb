@@ -1,10 +1,10 @@
 module RackDAV
-  
+
   class Controller
     include RackDAV::HTTPStatus
-    
+
     attr_reader :request, :response, :resource
-    
+
     def initialize(request, response, options)
       @request = request
       @response = response
@@ -12,7 +12,7 @@ module RackDAV
       @resource = resource_class.new(url_unescape(request.path_info), @options)
       raise Forbidden if request.path_info.include?('../')
     end
-    
+
     def url_escape(s)
       s.gsub(/([^\/a-zA-Z0-9_.-]+)/n) do
         '%' + $1.unpack('H2' * $1.size).join('%').upcase
@@ -23,27 +23,27 @@ module RackDAV
       s.tr('+', ' ').gsub(/((?:%[0-9a-fA-F]{2})+)/n) do
         [$1.delete('%')].pack('H*')
       end
-    end    
-    
+    end
+
     def options
       response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE,LOCK,UNLOCK'
       response["Dav"] = "1,2"
       response["Ms-Author-Via"] = "DAV"
     end
-    
+
     def head
       raise NotFound if not resource.exist?
       response['Etag'] = resource.etag
       response['Content-Type'] = resource.content_type
       response['Last-Modified'] = resource.last_modified.httpdate
     end
-    
+
     def get
       raise NotFound if not resource.exist?
       response['Etag'] = resource.etag
       response['Content-Type'] = resource.content_type
       response['Content-Length'] = resource.content_length.to_s
-      response['Last-Modified'] = resource.last_modified.httpdate      
+      response['Last-Modified'] = resource.last_modified.httpdate
       map_exceptions do
         resource.get(request, response)
       end
@@ -64,7 +64,7 @@ module RackDAV
 
     def delete
       delete_recursive(resource, errors = [])
-      
+
       if errors.empty?
         response.status = NoContent
       else
@@ -73,30 +73,30 @@ module RackDAV
         end
       end
     end
-    
+
     def mkcol
       map_exceptions do
         resource.make_collection
       end
       response.status = Created
     end
-    
+
     def copy
       raise NotFound if not resource.exist?
-      
+
       dest_uri = URI.parse(env['HTTP_DESTINATION'])
       destination = url_unescape(dest_uri.path)
 
       raise BadGateway if dest_uri.host and dest_uri.host != request.host
       raise Forbidden if destination == resource.path
-      
+
       dest = resource_class.new(destination, @options)
       dest = dest.child(resource.name) if dest.collection?
-      
+
       dest_existed = dest.exist?
-      
+
       copy_recursive(resource, dest, depth, errors = [])
-      
+
       if errors.empty?
         response.status = dest_existed ? NoContent : Created
       else
@@ -113,20 +113,20 @@ module RackDAV
 
       dest_uri = URI.parse(env['HTTP_DESTINATION'])
       destination = url_unescape(dest_uri.path)
-      
+
       raise BadGateway if dest_uri.host and dest_uri.host != request.host
       raise Forbidden if destination == resource.path
-      
+
       dest = resource_class.new(destination, @options)
       dest = dest.child(resource.name) if dest.collection?
-      
+
       dest_existed = dest.exist?
-      
+
       raise Conflict if depth <= 1
-      
+
       copy_recursive(resource, dest, depth, errors = [])
       delete_recursive(resource, errors)
-      
+
       if errors.empty?
         response.status = dest_existed ? NoContent : Created
       else
@@ -137,7 +137,7 @@ module RackDAV
     rescue URI::InvalidURIError => e
       raise BadRequest.new(e.message)
     end
-    
+
     def propfind
       raise NotFound if not resource.exist?
 
@@ -153,13 +153,13 @@ module RackDAV
         for resource in find_resources
           resource.path.gsub!(/\/\//, '/')
           xml.response do
-          	xml.href "http://#{host}#{url_escape resource.path}"
+            xml.href "http://#{host}#{url_escape resource.path}"
             propstats xml, get_properties(resource, names)
           end
         end
       end
     end
-    
+
     def proppatch
       raise NotFound if not resource.exist?
 
@@ -214,17 +214,17 @@ module RackDAV
 
     # ************************************************************
     # private methods
-    
+
     private
 
     def env
       @request.env
     end
-    
+
     def host
       env['HTTP_HOST']
     end
-    
+
     def resource_class
       @options[:resource_class]
     end
@@ -256,14 +256,14 @@ module RackDAV
       for child in res.children
         delete_recursive(child, errors)
       end
-      
+
       begin
         map_exceptions { res.delete } if errors.empty?
       rescue Status
         errors << [res.path, $!]
       end
     end
-    
+
     def copy_recursive(res, dest, depth, errors)
       map_exceptions do
         if dest.exist?
@@ -285,7 +285,7 @@ module RackDAV
         end
       end
     end
-    
+
     def map_exceptions
       yield
     rescue
@@ -293,13 +293,13 @@ module RackDAV
       when URI::InvalidURIError then raise BadRequest
       when Errno::EACCES then raise Forbidden
       when Errno::ENOENT then raise Conflict
-      when Errno::EEXIST then raise Conflict      
+      when Errno::EEXIST then raise Conflict
       when Errno::ENOSPC then raise InsufficientStorage
       else
         raise
       end
     end
-    
+
     def request_document
       @request_document ||= REXML::Document.new(request.body.read)
     rescue REXML::ParseException
@@ -313,26 +313,26 @@ module RackDAV
     def render_xml
       xml = Builder::XmlMarkup.new(:indent => 2)
       xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
-      
+
       xml.namespace('D') do
         yield xml
       end
-      
+
       response.body = xml.target!
       response["Content-Type"] = 'text/xml; charset="utf-8"'
       response["Content-Length"] = response.body.size.to_s
     end
-      
+
     def multistatus
       render_xml do |xml|
         xml.multistatus('xmlns:D' => "DAV:") do
           yield xml
         end
       end
-      
+
       response.status = MultiStatus
     end
-    
+
     def response_errors(xml, errors)
       for path, status in errors
         xml.response do
@@ -369,7 +369,7 @@ module RackDAV
       end
       stats
     end
-    
+
     def propstats(xml, stats)
       return if stats.empty?
       for status, props in stats
@@ -389,7 +389,7 @@ module RackDAV
         end
       end
     end
-    
+
     def rexml_convert(xml, element)
       if element.elements.empty?
         if element.text
@@ -405,7 +405,7 @@ module RackDAV
         end
       end
     end
-    
+
   end
 
-end 
+end

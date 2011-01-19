@@ -1,19 +1,19 @@
 module RackDAV
 
   module HTTPStatus
-    
+
     class Status < Exception
-      
+
       class << self
         attr_accessor :code, :reason_phrase
         alias_method :to_i, :code
-        
+
         def status_line
           "#{code} #{reason_phrase}"
         end
-        
+
       end
-      
+
       def code
         self.class.code
       end
@@ -21,17 +21,17 @@ module RackDAV
       def reason_phrase
         self.class.reason_phrase
       end
-      
+
       def status_line
         self.class.status_line
       end
-      
+
       def to_i
         self.class.to_i
       end
-      
+
     end
-    
+
     StatusMessage = {
       100 => 'Continue',
       101 => 'Switching Protocols',
@@ -71,7 +71,7 @@ module RackDAV
       417 => 'Expectation Failed',
       422 => 'Unprocessable Entity',
       423 => 'Locked',
-      424 => 'Failed Dependency',      
+      424 => 'Failed Dependency',
       500 => 'Internal Server Error',
       501 => 'Not Implemented',
       502 => 'Bad Gateway',
