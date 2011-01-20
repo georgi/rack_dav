@@ -8,10 +8,9 @@ possible by subclassing RackDAV::Resource.
 
 ## Install
 
-Just install the gem from github:
+Just install the gem from RubyGems:
 
-    $ gem sources -a http://gems.github.com
-    $ sudo gem install georgi-rack_dav
+    $ gem install rack_dav
 
 ## Quickstart
 
@@ -28,14 +27,12 @@ to without authentication.
 Using RackDAV inside a rack application is quite easy. A simple rackup
 script looks like this:
 
-    @@ruby
-
     require 'rubygems'
     require 'rack_dav'
-     
+    
     use Rack::CommonLogger
-     
-    run RackDAV::Handler.new('/path/to/docs')
+    
+    run RackDAV::Handler.new(:root => '/path/to/docs')
 
 ## Implementing your own WebDAV resource
 
@@ -47,23 +44,21 @@ find the real resource.
 
 RackDAV::Handler needs to be initialized with the actual resource class:
 
-    @@ruby
-
     RackDAV::Handler.new(:resource_class => MyResource)
 
 RackDAV needs some information about the resources, so you have to
 implement following methods:
-        
+
 * __children__: If this is a collection, return the child resources.
 
 * __collection?__: Is this resource a collection?
 
 * __exist?__: Does this recource exist?
-    
+
 * __creation\_date__: Return the creation time.
 
 * __last\_modified__: Return the time of last modification.
-    
+
 * __last\_modified=(time)__: Set the time of last modification.
 
 * __etag__: Return an Etag, an unique hash value for this resource.
@@ -87,7 +82,7 @@ to retrieve and change the resources:
 * __copy(dest)__: Copy this resource to given destination resource.
 
 * __move(dest)__: Move this resource to given destination resource.
-    
+
 * __make\_collection__: Create this resource as collection.
 
 
