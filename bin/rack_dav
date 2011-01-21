@@ -15,6 +15,6 @@ end.to_app
 
 begin
   Rack::Handler::Mongrel.run(app, :Port => 3000)
-rescue
+rescue LoadError
   Rack::Handler::WEBrick.run(app, :Port => 3000)
 end
