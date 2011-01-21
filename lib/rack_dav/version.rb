@@ -4,8 +4,8 @@ module RackDAV
   module Version
     MAJOR = 0
     MINOR = 2
-    PATCH = 0
-    BUILD = "dev#{Time.now.to_i}"
+    PATCH = "dev"
+    BUILD = nil
 
     STRING = [MAJOR, MINOR, PATCH, BUILD].compact.join(".")
   end

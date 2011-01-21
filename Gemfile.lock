@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rack_dav (0.2.0.dev1295606841)
+    rack_dav (0.2.dev)
       builder
       rack
 

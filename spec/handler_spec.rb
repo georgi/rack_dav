@@ -1,7 +1,4 @@
-$:.unshift(File.expand_path(File.dirname(__FILE__) + '/../lib'))
-
-require 'rubygems'
-require 'rack_dav'
+require 'spec_helper'
 require 'fileutils'
 
 describe RackDAV::Handler do
