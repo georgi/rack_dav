@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'rubygems'
+$:.unshift(File.expand_path("../../lib", __FILE__))
+
 require 'rack_dav'
 
 app = Rack::Builder.new do
