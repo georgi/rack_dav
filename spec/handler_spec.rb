@@ -16,65 +16,20 @@ describe RackDAV::Handler do
 
   attr_reader :response
 
-  def request(method, uri, options={})
-    options = {
-      'HTTP_HOST' => 'localhost',
-      'REMOTE_USER' => 'manni'
-    }.merge(options)
-    request = Rack::MockRequest.new(@controller)
-    @response = request.request(method, uri, options)
-  end
 
-  METHODS.each do |method|
-    define_method(method.downcase) do |*args|
-      request(method, *args)
+  describe "OPTIONS /" do
+    it "is successful" do
+      options('/').should be_ok
     end
-  end
 
-  def render
-    xml = Builder::XmlMarkup.new
-    xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
-    xml.namespace('d') do
-      yield xml
-    end
-    xml.target!
-  end
-
-  def url_escape(string)
-    string.gsub(/([^ a-zA-Z0-9_.-]+)/n) do
-      '%' + $1.unpack('H2' * $1.size).join('%').upcase
-    end.tr(' ', '+')
-  end
-
-  def response_xml
-    REXML::Document.new(@response.body)
-  end
-
-  def multistatus_response(pattern)
-    @response.should be_multi_status
-    REXML::XPath::match(response_xml, "/multistatus/response", '' => 'DAV:').should_not be_empty
-    REXML::XPath::match(response_xml, "/multistatus/response" + pattern, '' => 'DAV:')
-  end
-
-  def propfind_xml(*props)
-    render do |xml|
-      xml.propfind('xmlns:d' => "DAV:") do
-        xml.prop do
-          props.each do |prop|
-          xml.tag! prop
-          end
-        end
+    it "sets the allow header with all options" do
+      options('/')
+      METHODS.each do |method|
+        response.headers['allow'].should include(method)
       end
     end
   end
 
-  it 'should return all options' do
-    options('/').should be_ok
-
-    METHODS.each do |method|
-      response.headers['allow'].should include(method)
-    end
-  end
 
   it 'should return headers' do
     put('/test.html', :input => '<html/>').should be_ok
@@ -264,4 +219,61 @@ describe RackDAV::Handler do
     match['/timeout'].should_not be_empty
     match['/locktoken'].should_not be_empty
   end
+
+
+  private
+
+    def request(method, uri, options={})
+      options = {
+        'HTTP_HOST' => 'localhost',
+        'REMOTE_USER' => 'manni'
+      }.merge(options)
+      request = Rack::MockRequest.new(@controller)
+      @response = request.request(method, uri, options)
+    end
+
+    METHODS.each do |method|
+      define_method(method.downcase) do |*args|
+        request(method, *args)
+      end
+    end
+
+
+    def render
+      xml = Builder::XmlMarkup.new
+      xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+      xml.namespace('d') do
+        yield xml
+      end
+      xml.target!
+    end
+
+    def url_escape(string)
+      string.gsub(/([^ a-zA-Z0-9_.-]+)/n) do
+        '%' + $1.unpack('H2' * $1.size).join('%').upcase
+      end.tr(' ', '+')
+    end
+
+    def response_xml
+      REXML::Document.new(@response.body)
+    end
+
+    def multistatus_response(pattern)
+      @response.should be_multi_status
+      REXML::XPath::match(response_xml, "/multistatus/response", '' => 'DAV:').should_not be_empty
+      REXML::XPath::match(response_xml, "/multistatus/response" + pattern, '' => 'DAV:')
+    end
+
+    def propfind_xml(*props)
+      render do |xml|
+        xml.propfind('xmlns:d' => "DAV:") do
+          xml.prop do
+            props.each do |prop|
+            xml.tag! prop
+            end
+          end
+        end
+      end
+    end
+
 end
