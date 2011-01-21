@@ -149,19 +149,20 @@ module RackDAV
       File.unlink(tempfile) rescue nil
     end
 
+
     private
 
-    def root
-      @options[:root]
-    end
+      def root
+        @options[:root]
+      end
 
-    def file_path
-      root + '/' + path
-    end
+      def file_path
+        root + '/' + path
+      end
 
-    def stat
-      @stat ||= File.stat(file_path)
-    end
+      def stat
+        @stat ||= File.stat(file_path)
+      end
 
   end
 

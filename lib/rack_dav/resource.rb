@@ -1,6 +1,7 @@
 module RackDAV
 
   class Resource
+
     attr_reader :path, :options
 
     def initialize(path, options)

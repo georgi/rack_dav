@@ -2,7 +2,7 @@ module RackDAV
 
   class Handler
 
-    def initialize(options={})
+    def initialize(options = {})
       @options = {
         :resource_class => FileResource,
         :root => Dir.pwd
@@ -10,7 +10,7 @@ module RackDAV
     end
 
     def call(env)
-      request = Rack::Request.new(env)
+      request  = Rack::Request.new(env)
       response = Rack::Response.new
 
       begin

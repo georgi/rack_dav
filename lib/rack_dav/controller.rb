@@ -6,9 +6,9 @@ module RackDAV
     attr_reader :request, :response, :resource
 
     def initialize(request, response, options)
-      @request = request
+      @request  = request
       @response = response
-      @options = options
+      @options  = options
       @resource = resource_class.new(url_unescape(request.path_info), @options)
       raise Forbidden if request.path_info.include?('../')
     end
@@ -212,199 +212,197 @@ module RackDAV
       raise NoContent
     end
 
-    # ************************************************************
-    # private methods
 
     private
 
-    def env
-      @request.env
-    end
-
-    def host
-      env['HTTP_HOST']
-    end
-
-    def resource_class
-      @options[:resource_class]
-    end
-
-    def depth
-      case env['HTTP_DEPTH']
-      when '0' then 0
-      when '1' then 1
-      else 100
-      end
-    end
-
-    def overwrite
-      env['HTTP_OVERWRITE'].to_s.upcase != 'F'
-    end
-
-    def find_resources
-      case env['HTTP_DEPTH']
-      when '0'
-        [resource]
-      when '1'
-        [resource] + resource.children
-      else
-        [resource] + resource.descendants
-      end
-    end
-
-    def delete_recursive(res, errors)
-      for child in res.children
-        delete_recursive(child, errors)
+      def env
+        @request.env
       end
 
-      begin
-        map_exceptions { res.delete } if errors.empty?
-      rescue Status
-        errors << [res.path, $!]
+      def host
+        env['HTTP_HOST']
       end
-    end
 
-    def copy_recursive(res, dest, depth, errors)
-      map_exceptions do
-        if dest.exist?
-          if overwrite
-            delete_recursive(dest, errors)
-          else
-            raise PreconditionFailed
-          end
+      def resource_class
+        @options[:resource_class]
+      end
+
+      def depth
+        case env['HTTP_DEPTH']
+        when '0' then 0
+        when '1' then 1
+        else 100
         end
-        res.copy(dest)
       end
-    rescue Status
-      errors << [res.path, $!]
-    else
-      if depth > 0
+
+      def overwrite
+        env['HTTP_OVERWRITE'].to_s.upcase != 'F'
+      end
+
+      def find_resources
+        case env['HTTP_DEPTH']
+        when '0'
+          [resource]
+        when '1'
+          [resource] + resource.children
+        else
+          [resource] + resource.descendants
+        end
+      end
+
+      def delete_recursive(res, errors)
         for child in res.children
-          dest_child = dest.child(child.name)
-          copy_recursive(child, dest_child, depth - 1, errors)
+          delete_recursive(child, errors)
         end
-      end
-    end
 
-    def map_exceptions
-      yield
-    rescue
-      case $!
-      when URI::InvalidURIError then raise BadRequest
-      when Errno::EACCES then raise Forbidden
-      when Errno::ENOENT then raise Conflict
-      when Errno::EEXIST then raise Conflict
-      when Errno::ENOSPC then raise InsufficientStorage
-      else
-        raise
-      end
-    end
-
-    def request_document
-      @request_document ||= REXML::Document.new(request.body.read)
-    rescue REXML::ParseException
-      raise BadRequest
-    end
-
-    def request_match(pattern)
-      REXML::XPath::match(request_document, pattern, '' => 'DAV:')
-    end
-
-    def render_xml
-      xml = Builder::XmlMarkup.new(:indent => 2)
-      xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
-
-      xml.namespace('D') do
-        yield xml
-      end
-
-      response.body = xml.target!
-      response["Content-Type"] = 'text/xml; charset="utf-8"'
-      response["Content-Length"] = response.body.size.to_s
-    end
-
-    def multistatus
-      render_xml do |xml|
-        xml.multistatus('xmlns:D' => "DAV:") do
-          yield xml
-        end
-      end
-
-      response.status = MultiStatus
-    end
-
-    def response_errors(xml, errors)
-      for path, status in errors
-        xml.response do
-          xml.href "http://#{host}#{path}"
-          xml.status "#{request.env['HTTP_VERSION']} #{status.status_line}"
-        end
-      end
-    end
-
-    def get_properties(resource, names)
-      stats = Hash.new { |h, k| h[k] = [] }
-      for name in names
         begin
-          map_exceptions do
-            stats[OK] << [name, resource.get_property(name)]
-          end
+          map_exceptions { res.delete } if errors.empty?
         rescue Status
-          stats[$!] << name
+          errors << [res.path, $!]
         end
       end
-      stats
-    end
 
-    def set_properties(resource, pairs)
-      stats = Hash.new { |h, k| h[k] = [] }
-      for name, value in pairs
-        begin
-          map_exceptions do
-            stats[OK] << [name, resource.set_property(name, value)]
-          end
-        rescue Status
-          stats[$!] << name
-        end
-      end
-      stats
-    end
-
-    def propstats(xml, stats)
-      return if stats.empty?
-      for status, props in stats
-        xml.propstat do
-          xml.prop do
-            for name, value in props
-              if value.is_a?(REXML::Element)
-                xml.tag!(name) do
-                  rexml_convert(xml, value)
-                end
-              else
-                xml.tag!(name, value)
-              end
+      def copy_recursive(res, dest, depth, errors)
+        map_exceptions do
+          if dest.exist?
+            if overwrite
+              delete_recursive(dest, errors)
+            else
+              raise PreconditionFailed
             end
           end
-          xml.status "#{request.env['HTTP_VERSION']} #{status.status_line}"
+          res.copy(dest)
         end
-      end
-    end
-
-    def rexml_convert(xml, element)
-      if element.elements.empty?
-        if element.text
-          xml.tag!(element.name, element.text, element.attributes)
-        else
-          xml.tag!(element.name, element.attributes)
-        end
+      rescue Status
+        errors << [res.path, $!]
       else
-        xml.tag!(element.name, element.attributes) do
-          element.elements.each do |child|
-            rexml_convert(xml, child)
+        if depth > 0
+          for child in res.children
+            dest_child = dest.child(child.name)
+            copy_recursive(child, dest_child, depth - 1, errors)
           end
         end
       end
-    end
+
+      def map_exceptions
+        yield
+      rescue
+        case $!
+        when URI::InvalidURIError then raise BadRequest
+        when Errno::EACCES then raise Forbidden
+        when Errno::ENOENT then raise Conflict
+        when Errno::EEXIST then raise Conflict
+        when Errno::ENOSPC then raise InsufficientStorage
+        else
+          raise
+        end
+      end
+
+      def request_document
+        @request_document ||= REXML::Document.new(request.body.read)
+      rescue REXML::ParseException
+        raise BadRequest
+      end
+
+      def request_match(pattern)
+        REXML::XPath::match(request_document, pattern, '' => 'DAV:')
+      end
+
+      def render_xml
+        xml = Builder::XmlMarkup.new(:indent => 2)
+        xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+
+        xml.namespace('D') do
+          yield xml
+        end
+
+        response.body = xml.target!
+        response["Content-Type"] = 'text/xml; charset="utf-8"'
+        response["Content-Length"] = response.body.size.to_s
+      end
+
+      def multistatus
+        render_xml do |xml|
+          xml.multistatus('xmlns:D' => "DAV:") do
+            yield xml
+          end
+        end
+
+        response.status = MultiStatus
+      end
+
+      def response_errors(xml, errors)
+        for path, status in errors
+          xml.response do
+            xml.href "http://#{host}#{path}"
+            xml.status "#{request.env['HTTP_VERSION']} #{status.status_line}"
+          end
+        end
+      end
+
+      def get_properties(resource, names)
+        stats = Hash.new { |h, k| h[k] = [] }
+        for name in names
+          begin
+            map_exceptions do
+              stats[OK] << [name, resource.get_property(name)]
+            end
+          rescue Status
+            stats[$!] << name
+          end
+        end
+        stats
+      end
+
+      def set_properties(resource, pairs)
+        stats = Hash.new { |h, k| h[k] = [] }
+        for name, value in pairs
+          begin
+            map_exceptions do
+              stats[OK] << [name, resource.set_property(name, value)]
+            end
+          rescue Status
+            stats[$!] << name
+          end
+        end
+        stats
+      end
+
+      def propstats(xml, stats)
+        return if stats.empty?
+        for status, props in stats
+          xml.propstat do
+            xml.prop do
+              for name, value in props
+                if value.is_a?(REXML::Element)
+                  xml.tag!(name) do
+                    rexml_convert(xml, value)
+                  end
+                else
+                  xml.tag!(name, value)
+                end
+              end
+            end
+            xml.status "#{request.env['HTTP_VERSION']} #{status.status_line}"
+          end
+        end
+      end
+
+      def rexml_convert(xml, element)
+        if element.elements.empty?
+          if element.text
+            xml.tag!(element.name, element.text, element.attributes)
+          else
+            xml.tag!(element.name, element.attributes)
+          end
+        else
+          xml.tag!(element.name, element.attributes) do
+            element.elements.each do |child|
+              rexml_convert(xml, child)
+            end
+          end
+        end
+      end
 
   end
 
