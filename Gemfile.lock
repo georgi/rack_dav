@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rack_dav (0.1.3)
+    rack_dav (0.2.0.dev1295606841)
       builder
       rack
 
@@ -21,6 +21,7 @@ GEM
     rspec-mocks (2.4.0)
 
 PLATFORMS
+  java
   ruby
 
 DEPENDENCIES
