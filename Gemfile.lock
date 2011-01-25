@@ -3,7 +3,7 @@ PATH
   specs:
     rack_dav (0.2.dev)
       builder
-      rack
+      rack (>= 1.2.0)
 
 GEM
   remote: http://rubygems.org/

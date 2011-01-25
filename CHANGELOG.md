@@ -8,6 +8,8 @@
 
 * CHANGED: Upgraded to RSpec 2.0.
 
+* CHANGED: Bump dependency to rack >= 1.2.0
+
 * FIXED: rack_dav binary crashes if Mongrel is not installed.
 
 
