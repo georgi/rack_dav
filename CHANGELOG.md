@@ -10,6 +10,9 @@
 
 * CHANGED: Bump dependency to rack >= 1.2.0
 
+* CHANGED: Removed response.status override/casting in RackDAV::Handler
+  because already performed in Rack::Response#finish.
+
 * FIXED: rack_dav binary crashes if Mongrel is not installed.
 
 

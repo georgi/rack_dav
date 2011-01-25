@@ -25,7 +25,6 @@ module RackDAV
       # enumerable, however.
       response.body = [response.body] if not response.body.respond_to? :each
 
-      response.status = response.status ? response.status.to_i : 200
       response.finish
     end
 
