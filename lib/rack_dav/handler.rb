@@ -2,6 +2,18 @@ module RackDAV
 
   class Handler
 
+    # @return [Hash] The hash of options.
+    attr_reader :options
+
+
+    # Initializes a new instance with given options.
+    #
+    # @param  [Hash] options Hash of options to customize the handler behavior.
+    # @option options [Class] :resource_class (FileResource)
+    #         The resource class.
+    # @option options [String] :root (".")
+    #         The root resource folder.
+    #
     def initialize(options = {})
       @options = {
         :resource_class => FileResource,
