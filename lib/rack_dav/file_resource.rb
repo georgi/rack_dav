@@ -69,11 +69,10 @@ module RackDAV
     # Write the content of the resource to the response.body.
     def get(request, response)
       if stat.directory?
-        response.body = ""
-        Rack::Directory.new(root).call(request.env)[2].each do |line|
-          response.body << line
-        end
-        response['Content-Length'] = response.body.size.to_s
+        content = ""
+        Rack::Directory.new(root).call(request.env)[2].each { |line| content << line }
+        response.body = [content]
+        response['Content-Length'] = content.size.to_s
       else
         file = Rack::File.new(nil)
         file.path = file_path

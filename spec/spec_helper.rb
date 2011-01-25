@@ -16,6 +16,10 @@ module Helpers
       described_class
     end
 
+    def fixture(*names)
+      File.join(SPEC_ROOT, "fixtures", *names)
+    end
+
 end
 
 RSpec.configure do |config|

@@ -308,6 +308,16 @@ module RackDAV
         REXML::XPath::match(request_document, pattern, '' => 'DAV:')
       end
 
+      # Creates a new XML document, yields given block
+      # and sets the response.body with the final XML content.
+      # The response length is updated accordingly.
+      #
+      # @return [void]
+      #
+      # @yield  [xml] Yields the Builder XML instance.
+      #
+      # @api internal
+      #
       def render_xml
         xml = Builder::XmlMarkup.new(:indent => 2)
         xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
@@ -316,9 +326,10 @@ module RackDAV
           yield xml
         end
 
-        response.body = xml.target!
+        content = xml.target!
+        response.body = [content]
         response["Content-Type"] = 'text/xml; charset="utf-8"'
-        response["Content-Length"] = response.body.size.to_s
+        response["Content-Length"] = Rack::Utils.bytesize(content).to_s
       end
 
       def multistatus

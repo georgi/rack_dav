@@ -1,6 +1,22 @@
 require 'spec_helper'
 require 'fileutils'
 
+require 'rack/mock'
+
+class Rack::MockResponse
+
+  attr_reader :original_response
+
+  def initialize_with_original(*args)
+    status, headers, @original_response = *args
+    initialize_without_original(*args)
+  end
+
+  alias_method :initialize_without_original, :initialize
+  alias_method :initialize, :initialize_with_original
+end
+
+
 describe RackDAV::Handler do
 
   DOC_ROOT = File.expand_path(File.dirname(__FILE__) + '/htdocs')
@@ -18,49 +34,32 @@ describe RackDAV::Handler do
   attr_reader :response
 
 
-  describe "#initialize" do
-    it "accepts zero parameters" do
-      lambda do
-        klass.new
-      end.should_not raise_error
-    end
+  describe "OPTIONS" do
+    context "/" do
+      it "is successful" do
+        options('/').should be_ok
+      end
 
-    it "accepts a hash of options" do
-      lambda do
-        klass.new({})
-        klass.new :foo => "bar"
-      end.should_not raise_error
-    end
-
-    it "sets options from argument" do
-      instance = klass.new :foo => "bar"
-      instance.options[:foo].should == "bar"
-    end
-
-    it "defaults option :resource_class to FileResource" do
-      instance = klass.new
-      instance.options[:resource_class].should be(RackDAV::FileResource)
-    end
-
-    it "defaults option :root to current directory" do
-      path = File.expand_path("../../bin", __FILE__)
-      Dir.chdir(path)
-      instance = klass.new
-      instance.options[:root].should == path
+      it "sets the allow header with all options" do
+        options('/')
+        METHODS.each do |method|
+          response.headers['allow'].should include(method)
+        end
+      end
     end
   end
 
 
-  describe "OPTIONS /" do
-    it "is successful" do
-      options('/').should be_ok
+  describe "LOCK" do
+    before(:each) do
+      put("/test", :input => "body").should be_ok
     end
 
-    it "sets the allow header with all options" do
-      options('/')
-      METHODS.each do |method|
-        response.headers['allow'].should include(method)
-      end
+    it "sets a compliant rack response" do
+      lock("/test", :input => File.read(fixture("requests/lock.xml")))
+      body = response.original_response.body
+      body.should be_a(Array)
+      body.should have(1).part
     end
   end
 

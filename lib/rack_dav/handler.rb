@@ -33,10 +33,6 @@ module RackDAV
         response.status = status.code
       end
 
-      # Strings in Ruby 1.9 are no longer enumerable.  Rack still expects the response.body to be
-      # enumerable, however.
-      response.body = [response.body] if not response.body.respond_to? :each
-
       response.finish
     end
 
