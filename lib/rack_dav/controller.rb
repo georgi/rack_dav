@@ -202,9 +202,10 @@ module RackDAV
 
     def unlock
       raise MethodNotAllowed unless resource.respond_to?(:unlock)
-      raise NoContent
-    end
 
+      locktoken = request_locktoken('LOCK_TOKEN')
+      response.status = resource.unlock(locktoken) ? NoContent : Forbidden
+    end
 
     private
 
