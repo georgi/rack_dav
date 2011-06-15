@@ -26,7 +26,12 @@ module RackDAV
     end
 
     def options
-      response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE,LOCK,UNLOCK'
+      response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE'
+
+      if resource.respond_to?(:lock) && resource.respond_to?(:unlock)
+        response["Allow"] << ",LOCK,UNLOCK"
+      end
+
       response["Dav"] = "1,2"
       response["Ms-Author-Via"] = "DAV"
     end
@@ -179,6 +184,7 @@ module RackDAV
     end
 
     def lock
+      raise MethodNotAllowed unless resource.respond_to?(:lock)
       raise NotFound if not resource.exist?
 
       lockscope = request_match("/lockinfo/lockscope/*")[0].name
@@ -214,6 +220,7 @@ module RackDAV
     end
 
     def unlock
+      raise MethodNotAllowed unless resource.respond_to?(:unlock)
       raise NoContent
     end
 
