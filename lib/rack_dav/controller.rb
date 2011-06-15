@@ -186,6 +186,11 @@ module RackDAV
       owner = request_match("/lockinfo/owner/href")[0]
       locktoken = "opaquelocktoken:" + sprintf('%x-%x-%s', Time.now.to_i, Time.now.sec, resource.etag)
 
+      timeout = request_timeout
+      if timeout.blank? || timeout.zero?
+        timeout = 60
+      end
+
       response['Lock-Token'] = locktoken
 
       render_xml do |xml|
@@ -198,7 +203,7 @@ module RackDAV
               if owner
                 xml.owner { xml.href owner.text }
               end
-              xml.timeout "Second-60"
+              xml.timeout "Second-#{timeout}"
               xml.locktoken do
                 xml.href locktoken
               end
@@ -306,6 +311,22 @@ module RackDAV
 
       def request_match(pattern)
         REXML::XPath::match(request_document, pattern, '' => 'DAV:')
+      end
+
+      # Quick and dirty parsing of the WEBDAV Timeout header.
+      # Refuses infinity, rejects anything but Second- timeouts
+      #
+      # @return [nil] or [Fixnum]
+      #
+      # @api internal
+      #
+      def request_timeout
+        timeout = request.env['HTTP_TIMEOUT']
+        return if timeout.blank?
+
+        timeout = timeout.split /,\s*/
+        timeout.reject! {|t| t !~ /^Second-/}
+        timeout.first.sub('Second-', '').to_i
       end
 
       # Creates a new XML document, yields given block
