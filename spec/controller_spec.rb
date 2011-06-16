@@ -173,184 +173,184 @@ describe RackDAV::Handler do
       end
     end
 
-  it 'should return headers' do
-    put('/test.html', :input => '<html/>').should be_ok
-    head('/test.html').should be_ok
+    it 'should return headers' do
+      put('/test.html', :input => '<html/>').should be_ok
+      head('/test.html').should be_ok
 
-    response.headers['etag'].should_not be_nil
-    response.headers['content-type'].should match(/html/)
-    response.headers['last-modified'].should_not be_nil
-  end
+      response.headers['etag'].should_not be_nil
+      response.headers['content-type'].should match(/html/)
+      response.headers['last-modified'].should_not be_nil
+    end
 
-  it 'should not find a nonexistent resource' do
-    get('/not_found').should be_not_found
-  end
+    it 'should not find a nonexistent resource' do
+      get('/not_found').should be_not_found
+    end
 
-  it 'should not allow directory traversal' do
-    get('/../htdocs').should be_forbidden
-  end
+    it 'should not allow directory traversal' do
+      get('/../htdocs').should be_forbidden
+    end
 
-  it 'should create a resource and allow its retrieval' do
-    put('/test', :input => 'body').should be_ok
-    get('/test').should be_ok
-    response.body.should == 'body'
-  end
-  it 'should create and find a url with escaped characters' do
-    put(url_escape('/a b'), :input => 'body').should be_ok
-    get(url_escape('/a b')).should be_ok
-    response.body.should == 'body'
-  end
+    it 'should create a resource and allow its retrieval' do
+      put('/test', :input => 'body').should be_ok
+      get('/test').should be_ok
+      response.body.should == 'body'
+    end
+    it 'should create and find a url with escaped characters' do
+      put(url_escape('/a b'), :input => 'body').should be_ok
+      get(url_escape('/a b')).should be_ok
+      response.body.should == 'body'
+    end
 
-  it 'should delete a single resource' do
-    put('/test', :input => 'body').should be_ok
-    delete('/test').should be_no_content
-  end
+    it 'should delete a single resource' do
+      put('/test', :input => 'body').should be_ok
+      delete('/test').should be_no_content
+    end
 
-  it 'should delete recursively' do
-    mkcol('/folder').should be_created
-    put('/folder/a', :input => 'body').should be_ok
-    put('/folder/b', :input => 'body').should be_ok
+    it 'should delete recursively' do
+      mkcol('/folder').should be_created
+      put('/folder/a', :input => 'body').should be_ok
+      put('/folder/b', :input => 'body').should be_ok
 
-    delete('/folder').should be_no_content
-    get('/folder').should be_not_found
-    get('/folder/a').should be_not_found
-    get('/folder/b').should be_not_found
-  end
+      delete('/folder').should be_no_content
+      get('/folder').should be_not_found
+      get('/folder/a').should be_not_found
+      get('/folder/b').should be_not_found
+    end
 
-  it 'should not allow copy to another domain' do
-    put('/test', :input => 'body').should be_ok
-    copy('http://localhost/', 'HTTP_DESTINATION' => 'http://another/').should be_bad_gateway
-  end
+    it 'should not allow copy to another domain' do
+      put('/test', :input => 'body').should be_ok
+      copy('http://localhost/', 'HTTP_DESTINATION' => 'http://another/').should be_bad_gateway
+    end
 
-  it 'should not allow copy to the same resource' do
-    put('/test', :input => 'body').should be_ok
-    copy('/test', 'HTTP_DESTINATION' => '/test').should be_forbidden
-  end
+    it 'should not allow copy to the same resource' do
+      put('/test', :input => 'body').should be_ok
+      copy('/test', 'HTTP_DESTINATION' => '/test').should be_forbidden
+    end
 
-  it 'should not allow an invalid destination uri' do
-    put('/test', :input => 'body').should be_ok
-    copy('/test', 'HTTP_DESTINATION' => '%').should be_bad_request
-  end
+    it 'should not allow an invalid destination uri' do
+      put('/test', :input => 'body').should be_ok
+      copy('/test', 'HTTP_DESTINATION' => '%').should be_bad_request
+    end
 
-  it 'should copy a single resource' do
-    put('/test', :input => 'body').should be_ok
-    copy('/test', 'HTTP_DESTINATION' => '/copy').should be_created
-    get('/copy').body.should == 'body'
-  end
+    it 'should copy a single resource' do
+      put('/test', :input => 'body').should be_ok
+      copy('/test', 'HTTP_DESTINATION' => '/copy').should be_created
+      get('/copy').body.should == 'body'
+    end
 
-  it 'should copy a resource with escaped characters' do
-    put(url_escape('/a b'), :input => 'body').should be_ok
-    copy(url_escape('/a b'), 'HTTP_DESTINATION' => url_escape('/a c')).should be_created
-    get(url_escape('/a c')).should be_ok
-    response.body.should == 'body'
-  end
+    it 'should copy a resource with escaped characters' do
+      put(url_escape('/a b'), :input => 'body').should be_ok
+      copy(url_escape('/a b'), 'HTTP_DESTINATION' => url_escape('/a c')).should be_created
+      get(url_escape('/a c')).should be_ok
+      response.body.should == 'body'
+    end
 
-  it 'should deny a copy without overwrite' do
-    put('/test', :input => 'body').should be_ok
-    put('/copy', :input => 'copy').should be_ok
-    copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F')
+    it 'should deny a copy without overwrite' do
+      put('/test', :input => 'body').should be_ok
+      put('/copy', :input => 'copy').should be_ok
+      copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F')
 
-    multistatus_response('/href').first.text.should == 'http://localhost/test'
-    multistatus_response('/status').first.text.should match(/412 Precondition Failed/)
+      multistatus_response('/href').first.text.should == 'http://localhost/test'
+      multistatus_response('/status').first.text.should match(/412 Precondition Failed/)
 
-    get('/copy').body.should == 'copy'
-  end
+      get('/copy').body.should == 'copy'
+    end
 
-  it 'should allow a copy with overwrite' do
-    put('/test', :input => 'body').should be_ok
-    put('/copy', :input => 'copy').should be_ok
-    copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'T').should be_no_content
-    get('/copy').body.should == 'body'
-  end
+    it 'should allow a copy with overwrite' do
+      put('/test', :input => 'body').should be_ok
+      put('/copy', :input => 'copy').should be_ok
+      copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'T').should be_no_content
+      get('/copy').body.should == 'body'
+    end
 
-  it 'should copy a collection' do
-    mkcol('/folder').should be_created
-    copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
-    propfind('/copy', :input => propfind_xml(:resourcetype))
-    multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
-  end
+    it 'should copy a collection' do
+      mkcol('/folder').should be_created
+      copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
+      propfind('/copy', :input => propfind_xml(:resourcetype))
+      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+    end
 
-  it 'should copy a collection resursively' do
-    mkcol('/folder').should be_created
-    put('/folder/a', :input => 'A').should be_ok
-    put('/folder/b', :input => 'B').should be_ok
+    it 'should copy a collection resursively' do
+      mkcol('/folder').should be_created
+      put('/folder/a', :input => 'A').should be_ok
+      put('/folder/b', :input => 'B').should be_ok
 
-    copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
-    propfind('/copy', :input => propfind_xml(:resourcetype))
-    multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+      copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
+      propfind('/copy', :input => propfind_xml(:resourcetype))
+      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
 
-    get('/copy/a').body.should == 'A'
-    get('/copy/b').body.should == 'B'
-  end
+      get('/copy/a').body.should == 'A'
+      get('/copy/b').body.should == 'B'
+    end
 
-  it 'should move a collection recursively' do
-    mkcol('/folder').should be_created
-    put('/folder/a', :input => 'A').should be_ok
-    put('/folder/b', :input => 'B').should be_ok
+    it 'should move a collection recursively' do
+      mkcol('/folder').should be_created
+      put('/folder/a', :input => 'A').should be_ok
+      put('/folder/b', :input => 'B').should be_ok
 
-    move('/folder', 'HTTP_DESTINATION' => '/move').should be_created
-    propfind('/move', :input => propfind_xml(:resourcetype))
-    multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+      move('/folder', 'HTTP_DESTINATION' => '/move').should be_created
+      propfind('/move', :input => propfind_xml(:resourcetype))
+      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
 
-    get('/move/a').body.should == 'A'
-    get('/move/b').body.should == 'B'
-    get('/folder/a').should be_not_found
-    get('/folder/b').should be_not_found
-  end
+      get('/move/a').body.should == 'A'
+      get('/move/b').body.should == 'B'
+      get('/folder/a').should be_not_found
+      get('/folder/b').should be_not_found
+    end
 
-  it 'should create a collection' do
-    mkcol('/folder').should be_created
-    propfind('/folder', :input => propfind_xml(:resourcetype))
-    multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
-  end
+    it 'should create a collection' do
+      mkcol('/folder').should be_created
+      propfind('/folder', :input => propfind_xml(:resourcetype))
+      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+    end
 
-  it 'should not find properties for nonexistent resources' do
-    propfind('/non').should be_not_found
-  end
+    it 'should not find properties for nonexistent resources' do
+      propfind('/non').should be_not_found
+    end
 
-  it 'should find all properties' do
-    xml = render do |xml|
-      xml.propfind('xmlns:d' => "DAV:") do
-        xml.allprop
+    it 'should find all properties' do
+      xml = render do |xml|
+        xml.propfind('xmlns:d' => "DAV:") do
+          xml.allprop
+        end
+      end
+
+      propfind('http://localhost/', :input => xml)
+
+      multistatus_response('/href').first.text.strip.should == 'http://localhost/'
+
+      props = %w(creationdate displayname getlastmodified getetag resourcetype getcontenttype getcontentlength)
+      props.each do |prop|
+        multistatus_response('/propstat/prop/' + prop).should_not be_empty
       end
     end
 
-    propfind('http://localhost/', :input => xml)
+    it 'should find named properties' do
+      put('/test.html', :input => '<html/>').should be_ok
+      propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
 
-    multistatus_response('/href').first.text.strip.should == 'http://localhost/'
-
-    props = %w(creationdate displayname getlastmodified getetag resourcetype getcontenttype getcontentlength)
-    props.each do |prop|
-      multistatus_response('/propstat/prop/' + prop).should_not be_empty
+      multistatus_response('/propstat/prop/getcontenttype').first.text.should == 'text/html'
+      multistatus_response('/propstat/prop/getcontentlength').first.text.should == '7'
     end
-  end
 
-  it 'should find named properties' do
-    put('/test.html', :input => '<html/>').should be_ok
-    propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
+    it 'should not support LOCK' do
+      put('/test', :input => 'body').should be_ok
 
-    multistatus_response('/propstat/prop/getcontenttype').first.text.should == 'text/html'
-    multistatus_response('/propstat/prop/getcontentlength').first.text.should == '7'
-  end
-
-  it 'should not support LOCK' do
-    put('/test', :input => 'body').should be_ok
-
-    xml = render do |xml|
-      xml.lockinfo('xmlns:d' => "DAV:") do
-        xml.lockscope { xml.exclusive }
-        xml.locktype { xml.write }
-        xml.owner { xml.href "http://test.de/" }
+      xml = render do |xml|
+        xml.lockinfo('xmlns:d' => "DAV:") do
+          xml.lockscope { xml.exclusive }
+          xml.locktype { xml.write }
+          xml.owner { xml.href "http://test.de/" }
+        end
       end
+
+      lock('/test', :input => xml).should be_method_not_allowed
     end
 
-    lock('/test', :input => xml).should be_method_not_allowed
-  end
-
-  it 'should not support UNLOCK' do
-    put('/test', :input => 'body').should be_ok
-    unlock('/test', :input => '').should be_method_not_allowed
-  end
+    it 'should not support UNLOCK' do
+      put('/test', :input => 'body').should be_ok
+      unlock('/test', :input => '').should be_method_not_allowed
+    end
 
   end
 
