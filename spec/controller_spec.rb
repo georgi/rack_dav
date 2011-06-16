@@ -18,15 +18,15 @@ class Rack::MockResponse
   alias_method :initialize, :initialize_with_original
 end
 
-
 describe RackDAV::Handler do
 
   DOC_ROOT = File.expand_path(File.dirname(__FILE__) + '/htdocs')
   METHODS = %w(GET PUT POST DELETE PROPFIND PROPPATCH MKCOL COPY MOVE OPTIONS HEAD LOCK UNLOCK)
+  CLASS_2 = METHODS
+  CLASS_1 = CLASS_2 - %w(LOCK UNLOCK)
 
   before do
     FileUtils.mkdir(DOC_ROOT) unless File.exists?(DOC_ROOT)
-    @controller = RackDAV::Handler.new(:root => DOC_ROOT)
   end
 
   after do
@@ -35,33 +35,120 @@ describe RackDAV::Handler do
 
   attr_reader :response
 
+  context "[Lockable]" do
+    before do
+      @controller = RackDAV::Handler.new(
+        :root           => DOC_ROOT,
+        :resource_class => RackDAV::LockableFileResource
+      )
+    end
 
-  describe "OPTIONS" do
-    context "/" do
+    describe "OPTIONS" do
       it "is successful" do
         options('/').should be_ok
       end
 
-      it "sets the allow header with all options" do
+      it "sets the allow header with class 2 methods" do
         options('/')
-        METHODS.each do |method|
+        CLASS_2.each do |method|
           response.headers['allow'].should include(method)
         end
       end
     end
-  end
 
+    describe "LOCK" do
+      before(:each) do
+        put("/test", :input => "body").should be_ok
+        lock("/test", :input => File.read(fixture("requests/lock.xml")))
+      end
 
-  describe "LOCK" do
-    before(:each) do
-      put("/test", :input => "body").should be_ok
+      describe "creation" do
+        it "succeeds" do
+          response.should be_ok
+        end
+
+        it "sets a compliant rack response" do
+          body = response.original_response.body
+          body.should be_a(Array)
+          body.should have(1).part
+        end
+
+        it "prints the lockdiscovery" do
+          lockdiscovery_response response_locktoken
+        end
+      end
+
+      describe "refreshing" do
+        context "a valid locktoken" do
+          it "prints the lockdiscovery" do
+            token = response_locktoken
+            lock("/test", 'HTTP_IF' => "(#{token})").should be_ok
+            lockdiscovery_response token
+          end
+
+          it "accepts it without parenthesis" do
+            token = response_locktoken
+            lock("/test", 'HTTP_IF' => token).should be_ok
+            lockdiscovery_response token
+          end
+        end
+
+        context "an invalid locktoken" do
+          it "bails out" do
+            lock("/test", 'HTTP_IF' => '123')
+            response.should be_forbidden
+            response.body.should be_empty
+          end
+        end
+
+        context "no locktoken" do
+          it "bails out" do
+            lock("/test")
+            response.should be_bad_request
+            response.body.should be_empty
+          end
+        end
+
+      end
     end
 
-    it "sets a compliant rack response" do
-      lock("/test", :input => File.read(fixture("requests/lock.xml")))
-      body = response.original_response.body
-      body.should be_a(Array)
-      body.should have(1).part
+    describe "UNLOCK" do
+      before(:each) do
+        put("/test", :input => "body").should be_ok
+        lock("/test", :input => File.read(fixture("requests/lock.xml"))).should be_ok
+      end
+
+      context "given a valid token" do
+        before(:each) do
+          token = response_locktoken
+          unlock("/test", 'HTTP_LOCK_TOKEN' => "(#{token})")
+        end
+
+        it "unlocks the resource" do
+          response.should be_no_content
+        end
+      end
+
+      context "given an invalid token" do
+        before(:each) do
+          unlock("/test", 'HTTP_LOCK_TOKEN' => '(123)')
+        end
+
+        it "bails out" do
+          response.should be_forbidden
+        end
+      end
+
+      context "given no token" do
+        before(:each) do
+          unlock("/test")
+        end
+
+        it "bails out" do
+          response.should be_bad_request
+        end
+      end
+
     end
   end
 
@@ -290,7 +377,29 @@ describe RackDAV::Handler do
     end
 
     def response_xml
-      REXML::Document.new(@response.body)
+      @response_xml ||= REXML::Document.new(@response.body)
+    end
+
+    def response_locktoken
+      REXML::XPath::match(response_xml,
+        "/prop/lockdiscovery/activelock/locktoken/href", '' => 'DAV:'
+      ).first.text
+    end
+
+    def lockdiscovery_response(token)
+      match = lambda do |pattern|
+        REXML::XPath::match(response_xml, "/prop/lockdiscovery/activelock" + pattern, '' => 'DAV:')
+      end
+
+      match[''].should_not be_empty
+
+      match['/locktype'].should_not be_empty
+      match['/lockscope'].should_not be_empty
+      match['/depth'].should_not be_empty
+      match['/owner'].should_not be_empty
+      match['/timeout'].should_not be_empty
+      match['/locktoken/href'].should_not be_empty
+      match['/locktoken/href'].first.text.should == token
     end
 
     def multistatus_response(pattern)
