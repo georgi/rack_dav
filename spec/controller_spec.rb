@@ -35,7 +35,7 @@ describe RackDAV::Handler do
 
   attr_reader :response
 
-  context "[Lockable]" do
+  context "Given a Lockable resource" do
     before do
       @controller = RackDAV::Handler.new(
         :root           => DOC_ROOT,
@@ -152,7 +152,7 @@ describe RackDAV::Handler do
     end
   end
 
-  context "[Any]" do
+  context "Given a not lockable resource" do
     before do
       @controller = RackDAV::Handler.new(
         :root           => DOC_ROOT,
