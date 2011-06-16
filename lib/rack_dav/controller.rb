@@ -29,7 +29,7 @@ module RackDAV
       response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE'
       response["Dav"] = "1"
 
-      if resource.respond_to?(:lock) && resource.respond_to?(:unlock)
+      if resource.lockable?
         response["Allow"] << ",LOCK,UNLOCK"
         response["Dav"]   << ",2"
       end
@@ -185,7 +185,7 @@ module RackDAV
     end
 
     def lock
-      raise MethodNotAllowed unless resource.respond_to?(:lock)
+      raise MethodNotAllowed unless resource.lockable?
       raise NotFound if not resource.exist?
 
       timeout = request_timeout
@@ -201,7 +201,7 @@ module RackDAV
     end
 
     def unlock
-      raise MethodNotAllowed unless resource.respond_to?(:unlock)
+      raise MethodNotAllowed unless resource.lockable?
 
       locktoken = request_locktoken('LOCK_TOKEN')
       response.status = resource.unlock(locktoken) ? NoContent : Forbidden
