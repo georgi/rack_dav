@@ -441,7 +441,7 @@ module RackDAV
         raise BadRequest if locktoken.nil?
 
         timeout, lockscope, locktype, owner = resource.lock(locktoken, timeout)
-        unless lockscope && locktype && timeout && owner
+        unless lockscope && locktype && timeout
           raise Forbidden
         end
 
