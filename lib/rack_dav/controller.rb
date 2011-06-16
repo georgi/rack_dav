@@ -194,9 +194,9 @@ module RackDAV
       end
 
       if request_document.to_s.empty?
-        refresh_lock
+        refresh_lock timeout
       else
-        create_lock
+        create_lock timeout
       end
     end
 
@@ -418,13 +418,12 @@ module RackDAV
         end
       end
 
-      def create_lock
+      def create_lock(timeout)
         lockscope = request_match("/lockinfo/lockscope/*")[0].name
         locktype = request_match("/lockinfo/locktype/*")[0].name
         owner = request_match("/lockinfo/owner/href")[0]
         owner = owner.text if owner
         locktoken = "opaquelocktoken:" + sprintf('%x-%x-%s', Time.now.to_i, Time.now.sec, resource.etag)
-        timeout = request_timeout || 60
 
         # Quick & Dirty - FIXME: Lock should become a new Class
         # and this dirty parameter passing refactored.
@@ -437,11 +436,9 @@ module RackDAV
         render_lockdiscovery locktoken, lockscope, locktype, timeout, owner
       end
 
-      def refresh_lock
+      def refresh_lock(timeout)
         locktoken = request_locktoken('IF')
         raise BadRequest if locktoken.nil?
-
-        timeout = request_timeout || 60
 
         timeout, lockscope, locktype, owner = resource.lock(locktoken, timeout)
         unless lockscope && locktype && timeout && owner
