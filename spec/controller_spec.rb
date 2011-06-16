@@ -3,6 +3,8 @@ require 'fileutils'
 
 require 'rack/mock'
 
+require 'spec/support/lockable_file_resource'
+
 class Rack::MockResponse
 
   attr_reader :original_response
