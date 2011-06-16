@@ -130,6 +130,10 @@ module RackDAV
       self.class.new(path + '/' + name, options)
     end
 
+    def lockable?
+      self.respond_to?(:lock) && self.respond_to?(:unlock)
+    end
+
     def property_names
       %w(creationdate displayname getlastmodified getetag resourcetype getcontenttype getcontentlength)
     end

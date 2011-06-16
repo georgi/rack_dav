@@ -85,6 +85,10 @@ to retrieve and change the resources:
 
 * __make\_collection__: Create this resource as collection.
 
+* __lock(token, timeout, scope, type, owner)__: Lock this resource.
+  If scope, type and owner are nil, refresh the given lock.
+
+* __unlock(token)__: Unlock this resource
 
 Note, that it is generally possible, that a resource object is
 instantiated for a not yet existing resource.
