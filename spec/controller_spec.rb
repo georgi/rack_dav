@@ -91,6 +91,12 @@ describe RackDAV::Handler do
             lock("/test", 'HTTP_IF' => token).should be_ok
             lockdiscovery_response token
           end
+
+          it "accepts it with excess angular braces (office 2003)" do
+            token = response_locktoken
+            lock("/test", 'HTTP_IF' => "(<#{token}>)").should be_ok
+            lockdiscovery_response token
+          end
         end
 
         context "an invalid locktoken" do

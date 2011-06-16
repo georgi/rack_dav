@@ -323,7 +323,7 @@ module RackDAV
       def request_locktoken(header)
         token = request.env["HTTP_#{header}"]
         return if token.nil? || token.empty?
-        token.scan /^\(?(.+?)\)?$/
+        token.scan /^\(?<?(.+?)>?\)?$/
         return $1
       end
 
