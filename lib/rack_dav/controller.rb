@@ -27,12 +27,13 @@ module RackDAV
 
     def options
       response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE'
+      response["Dav"] = "1"
 
       if resource.respond_to?(:lock) && resource.respond_to?(:unlock)
         response["Allow"] << ",LOCK,UNLOCK"
+        response["Dav"]   << ",2"
       end
 
-      response["Dav"] = "1,2"
       response["Ms-Author-Via"] = "DAV"
     end
 
@@ -186,7 +187,6 @@ module RackDAV
     def lock
       raise MethodNotAllowed unless resource.respond_to?(:lock)
       raise NotFound if not resource.exist?
-
 
       timeout = request_timeout
       if timeout.blank? || timeout.zero?
