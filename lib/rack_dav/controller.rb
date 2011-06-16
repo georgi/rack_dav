@@ -424,7 +424,7 @@ module RackDAV
         owner = request_match("/lockinfo/owner/href")[0]
         owner = owner.text if owner
         locktoken = "opaquelocktoken:" + sprintf('%x-%x-%s', Time.now.to_i, Time.now.sec, resource.etag)
-        timeout = request_timeout
+        timeout = request_timeout || 60
 
         # Quick & Dirty - FIXME: Lock should become a new Class
         # and this dirty parameter passing refactored.
@@ -441,7 +441,7 @@ module RackDAV
         locktoken = request_locktoken('IF')
         raise BadRequest if locktoken.nil?
 
-        timeout = request_timeout
+        timeout = request_timeout || 60
 
         timeout, lockscope, locktype, owner = resource.lock(locktoken, timeout)
         unless lockscope && locktype && timeout && owner
