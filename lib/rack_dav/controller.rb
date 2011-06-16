@@ -189,11 +189,11 @@ module RackDAV
       raise NotFound if not resource.exist?
 
       timeout = request_timeout
-      if timeout.blank? || timeout.zero?
+      if timeout.nil? || timeout.zero?
         timeout = 60
       end
 
-      if request_document.to_s.blank?
+      if request_document.to_s.empty?
         refresh_lock
       else
         create_lock
@@ -311,7 +311,7 @@ module RackDAV
       #
       def request_timeout
         timeout = request.env['HTTP_TIMEOUT']
-        return if timeout.blank?
+        return if timeout.nil? || timeout.empty?
 
         timeout = timeout.split /,\s*/
         timeout.reject! {|t| t !~ /^Second-/}
@@ -320,7 +320,7 @@ module RackDAV
 
       def request_locktoken(header)
         token = request.env["HTTP_#{header}"]
-        return if token.blank?
+        return if token.nil? || token.empty?
         token.scan /^\((.+)\)$/
         return $1
       end
@@ -437,7 +437,7 @@ module RackDAV
 
       def refresh_lock
         locktoken = request_locktoken('IF')
-        raise BadRequest if locktoken.blank?
+        raise BadRequest if locktoken.nil?
 
         timeout = request_timeout
 
