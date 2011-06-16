@@ -152,6 +152,26 @@ describe RackDAV::Handler do
     end
   end
 
+  context "[Any]" do
+    before do
+      @controller = RackDAV::Handler.new(
+        :root           => DOC_ROOT,
+        :resource_class => RackDAV::FileResource
+      )
+    end
+
+    describe "OPTIONS" do
+      it "is successful" do
+        options('/').should be_ok
+      end
+
+      it "sets the allow header with class 2 methods" do
+        options('/')
+        CLASS_1.each do |method|
+          response.headers['allow'].should include(method)
+        end
+      end
+    end
 
   it 'should return headers' do
     put('/test.html', :input => '<html/>').should be_ok
@@ -313,7 +333,7 @@ describe RackDAV::Handler do
     multistatus_response('/propstat/prop/getcontentlength').first.text.should == '7'
   end
 
-  it 'should lock a resource' do
+  it 'should not support LOCK' do
     put('/test', :input => 'body').should be_ok
 
     xml = render do |xml|
@@ -324,22 +344,14 @@ describe RackDAV::Handler do
       end
     end
 
-    lock('/test', :input => xml)
+    lock('/test', :input => xml).should be_method_not_allowed
+  end
 
-    response.should be_ok
+  it 'should not support UNLOCK' do
+    put('/test', :input => 'body').should be_ok
+    unlock('/test', :input => '').should be_method_not_allowed
+  end
 
-    match = lambda do |pattern|
-      REXML::XPath::match(response_xml, "/prop/lockdiscovery/activelock" + pattern, '' => 'DAV:')
-    end
-
-    match[''].should_not be_empty
-
-    match['/locktype'].should_not be_empty
-    match['/lockscope'].should_not be_empty
-    match['/depth'].should_not be_empty
-    match['/owner'].should_not be_empty
-    match['/timeout'].should_not be_empty
-    match['/locktoken'].should_not be_empty
   end
 
 
