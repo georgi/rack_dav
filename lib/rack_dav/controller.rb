@@ -26,8 +26,14 @@ module RackDAV
     end
 
     def options
-      response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE,LOCK,UNLOCK'
-      response["Dav"] = "1,2"
+      response["Allow"] = 'OPTIONS,HEAD,GET,PUT,POST,DELETE,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE'
+      response["Dav"] = "1"
+
+      if resource.lockable?
+        response["Allow"] << ",LOCK,UNLOCK"
+        response["Dav"]   << ",2"
+      end
+
       response["Ms-Author-Via"] = "DAV"
     end
 
@@ -179,39 +185,29 @@ module RackDAV
     end
 
     def lock
+      raise MethodNotAllowed unless resource.lockable?
       raise NotFound if not resource.exist?
 
-      lockscope = request_match("/lockinfo/lockscope/*")[0].name
-      locktype = request_match("/lockinfo/locktype/*")[0].name
-      owner = request_match("/lockinfo/owner/href")[0]
-      locktoken = "opaquelocktoken:" + sprintf('%x-%x-%s', Time.now.to_i, Time.now.sec, resource.etag)
+      timeout = request_timeout
+      if timeout.nil? || timeout.zero?
+        timeout = 60
+      end
 
-      response['Lock-Token'] = locktoken
-
-      render_xml do |xml|
-        xml.prop('xmlns:D' => "DAV:") do
-          xml.lockdiscovery do
-            xml.activelock do
-              xml.lockscope { xml.tag! lockscope }
-              xml.locktype { xml.tag! locktype }
-              xml.depth 'Infinity'
-              if owner
-                xml.owner { xml.href owner.text }
-              end
-              xml.timeout "Second-60"
-              xml.locktoken do
-                xml.href locktoken
-              end
-            end
-          end
-        end
+      if request_document.to_s.empty?
+        refresh_lock timeout
+      else
+        create_lock timeout
       end
     end
 
     def unlock
-      raise NoContent
-    end
+      raise MethodNotAllowed unless resource.lockable?
 
+      locktoken = request_locktoken('LOCK_TOKEN')
+      raise BadRequest if locktoken.nil?
+
+      response.status = resource.unlock(locktoken) ? NoContent : Forbidden
+    end
 
     private
 
@@ -308,6 +304,29 @@ module RackDAV
         REXML::XPath::match(request_document, pattern, '' => 'DAV:')
       end
 
+      # Quick and dirty parsing of the WEBDAV Timeout header.
+      # Refuses infinity, rejects anything but Second- timeouts
+      #
+      # @return [nil] or [Fixnum]
+      #
+      # @api internal
+      #
+      def request_timeout
+        timeout = request.env['HTTP_TIMEOUT']
+        return if timeout.nil? || timeout.empty?
+
+        timeout = timeout.split /,\s*/
+        timeout.reject! {|t| t !~ /^Second-/}
+        timeout.first.sub('Second-', '').to_i
+      end
+
+      def request_locktoken(header)
+        token = request.env["HTTP_#{header}"]
+        return if token.nil? || token.empty?
+        token.scan /^\(?<?(.+?)>?\)?$/
+        return $1
+      end
+
       # Creates a new XML document, yields given block
       # and sets the response.body with the final XML content.
       # The response length is updated accordingly.
@@ -395,6 +414,62 @@ module RackDAV
               end
             end
             xml.status "#{request.env['HTTP_VERSION']} #{status.status_line}"
+          end
+        end
+      end
+
+      def create_lock(timeout)
+        lockscope = request_match("/lockinfo/lockscope/*")[0].name
+        locktype = request_match("/lockinfo/locktype/*")[0].name
+        owner = request_match("/lockinfo/owner/href")[0]
+        owner = owner.text if owner
+        locktoken = "opaquelocktoken:" + sprintf('%x-%x-%s', Time.now.to_i, Time.now.sec, resource.etag)
+
+        # Quick & Dirty - FIXME: Lock should become a new Class
+        # and this dirty parameter passing refactored.
+        unless resource.lock(locktoken, timeout, lockscope, locktype, owner)
+          raise Forbidden
+        end
+
+        response['Lock-Token'] = locktoken
+
+        render_lockdiscovery locktoken, lockscope, locktype, timeout, owner
+      end
+
+      def refresh_lock(timeout)
+        locktoken = request_locktoken('IF')
+        raise BadRequest if locktoken.nil?
+
+        timeout, lockscope, locktype, owner = resource.lock(locktoken, timeout)
+        unless lockscope && locktype && timeout
+          raise Forbidden
+        end
+
+        render_lockdiscovery locktoken, lockscope, locktype, timeout, owner
+      end
+
+      # FIXME add multiple locks support
+      def render_lockdiscovery(locktoken, lockscope, locktype, timeout, owner)
+        render_xml do |xml|
+          xml.prop('xmlns:D' => "DAV:") do
+            xml.lockdiscovery do
+              render_lock(xml, locktoken, lockscope, locktype, timeout, owner)
+            end
+          end
+        end
+      end
+
+      def render_lock(xml, locktoken, lockscope, locktype, timeout, owner)
+        xml.activelock do
+          xml.lockscope { xml.tag! lockscope }
+          xml.locktype { xml.tag! locktype }
+          xml.depth 'Infinity'
+          if owner
+            xml.owner { xml.href owner }
+          end
+          xml.timeout "Second-#{timeout}"
+          xml.locktoken do
+            xml.href locktoken
           end
         end
       end
