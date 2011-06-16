@@ -204,6 +204,8 @@ module RackDAV
       raise MethodNotAllowed unless resource.lockable?
 
       locktoken = request_locktoken('LOCK_TOKEN')
+      raise BadRequest if locktoken.nil?
+
       response.status = resource.unlock(locktoken) ? NoContent : Forbidden
     end
 
