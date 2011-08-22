@@ -46,11 +46,10 @@ module RackDAV
 
     # Return the resource type.
     #
-    # If this is a collection, return
-    # REXML::Element.new('D:collection')
+    # If this is a collection, return a collection element
     def resource_type
       if collection?
-        REXML::Element.new('D:collection')
+        Nokogiri::XML::fragment('<D:collection xmlns:D="DAV:"/>').children.first
       end
     end
 

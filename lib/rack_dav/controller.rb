@@ -147,10 +147,10 @@ module RackDAV
     def propfind
       raise NotFound if not resource.exist?
 
-      if not request_match("/propfind/allprop").empty?
+      if not request_match("/d:propfind/d:allprop").empty?
         names = resource.property_names
       else
-        names = request_match("/propfind/prop/*").map { |e| e.name }
+        names = request_match("/d:propfind/d:prop/d:*").map { |e| e.name }
         names = resource.property_names if names.empty?
         raise BadRequest if names.empty?
       end
@@ -169,8 +169,8 @@ module RackDAV
     def proppatch
       raise NotFound if not resource.exist?
 
-      prop_rem = request_match("/propertyupdate/remove/prop/*").map { |e| [e.name] }
-      prop_set = request_match("/propertyupdate/set/prop/*").map { |e| [e.name, e.text] }
+      prop_rem = request_match("/d:propertyupdate/d:remove/d:prop/d:*").map { |e| [e.name] }
+      prop_set = request_match("/d:propertyupdate/d:set/d:prop/d:*").map { |e| [e.name, e.text] }
 
       multistatus do |xml|
         for resource in find_resources
@@ -193,7 +193,7 @@ module RackDAV
         timeout = 60
       end
 
-      if request_document.to_s.empty?
+      if request_document.content.empty?
         refresh_lock timeout
       else
         create_lock timeout
@@ -295,13 +295,13 @@ module RackDAV
       end
 
       def request_document
-        @request_document ||= REXML::Document.new(request.body.read)
-      rescue REXML::ParseException
+        @request_document ||= Nokogiri::XML(request.body.read) {|config| config.strict }
+      rescue Nokogiri::XML::SyntaxError
         raise BadRequest
       end
 
       def request_match(pattern)
-        REXML::XPath::match(request_document, pattern, '' => 'DAV:')
+        request_document.xpath(pattern, 'd' => 'DAV:')
       end
 
       # Quick and dirty parsing of the WEBDAV Timeout header.
@@ -338,14 +338,9 @@ module RackDAV
       # @api internal
       #
       def render_xml
-        xml = Builder::XmlMarkup.new(:indent => 2)
-        xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
-
-        xml.namespace('D') do
+        content = Nokogiri::XML::Builder.new(:encoding => "UTF-8") do |xml|
           yield xml
-        end
-
-        content = xml.target!
+        end.to_xml
         response.body = [content]
         response["Content-Type"] = 'text/xml; charset="utf-8"'
         response["Content-Length"] = Rack::Utils.bytesize(content).to_s
@@ -353,7 +348,7 @@ module RackDAV
 
       def multistatus
         render_xml do |xml|
-          xml.multistatus('xmlns:D' => "DAV:") do
+          xml.multistatus('xmlns' => "DAV:") do
             yield xml
           end
         end
@@ -404,12 +399,12 @@ module RackDAV
           xml.propstat do
             xml.prop do
               for name, value in props
-                if value.is_a?(REXML::Element)
-                  xml.tag!(name) do
+                if value.is_a?(Nokogiri::XML::Node)
+                  xml.send(name) do
                     rexml_convert(xml, value)
                   end
                 else
-                  xml.tag!(name, value)
+                  xml.send(name, value)
                 end
               end
             end
@@ -419,9 +414,11 @@ module RackDAV
       end
 
       def create_lock(timeout)
-        lockscope = request_match("/lockinfo/lockscope/*")[0].name
-        locktype = request_match("/lockinfo/locktype/*")[0].name
-        owner = request_match("/lockinfo/owner/href")[0]
+        lockscope = request_match("/d:lockinfo/d:lockscope/d:*").first
+        lockscope = lockscope.name if lockscope
+        locktype = request_match("/d:lockinfo/d:locktype/d:*").first
+        locktype = locktype.name if locktype
+        owner = request_match("/d:lockinfo/d:owner/d:href").first
         owner = owner.text if owner
         locktoken = "opaquelocktoken:" + sprintf('%x-%x-%s', Time.now.to_i, Time.now.sec, resource.etag)
 
@@ -451,7 +448,7 @@ module RackDAV
       # FIXME add multiple locks support
       def render_lockdiscovery(locktoken, lockscope, locktype, timeout, owner)
         render_xml do |xml|
-          xml.prop('xmlns:D' => "DAV:") do
+          xml.prop('xmlns' => "DAV:") do
             xml.lockdiscovery do
               render_lock(xml, locktoken, lockscope, locktype, timeout, owner)
             end
@@ -477,12 +474,12 @@ module RackDAV
       def rexml_convert(xml, element)
         if element.elements.empty?
           if element.text
-            xml.tag!(element.name, element.text, element.attributes)
+            xml.send(element.name.to_sym, element.text, element.attributes)
           else
-            xml.tag!(element.name, element.attributes)
+            xml.send(element.name.to_sym, element.attributes)
           end
         else
-          xml.tag!(element.name, element.attributes) do
+          xml.send(element.name.to_sym, element.attributes) do
             element.elements.each do |child|
               rexml_convert(xml, child)
             end
