@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = ["README.md"]
 
-  s.add_dependency("rack", ">= 1.2.0")
-  s.add_dependency("builder")
+  s.add_dependency("rack", "~> 1.2.0")
+  s.add_dependency('nokogiri')
   s.add_development_dependency("rspec", "~> 2.6.0")
 end

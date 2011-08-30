@@ -3,7 +3,7 @@ require 'fileutils'
 
 require 'rack/mock'
 
-require 'spec/support/lockable_file_resource'
+require 'support/lockable_file_resource'
 
 class Rack::MockResponse
 
@@ -256,8 +256,8 @@ describe RackDAV::Handler do
       put('/copy', :input => 'copy').should be_ok
       copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F')
 
-      multistatus_response('/href').first.text.should == 'http://localhost/test'
-      multistatus_response('/status').first.text.should match(/412 Precondition Failed/)
+      multistatus_response('/d:href').first.text.should == 'http://localhost/test'
+      multistatus_response('/d:status').first.text.should match(/412 Precondition Failed/)
 
       get('/copy').body.should == 'copy'
     end
@@ -273,7 +273,7 @@ describe RackDAV::Handler do
       mkcol('/folder').should be_created
       copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
       propfind('/copy', :input => propfind_xml(:resourcetype))
-      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+      multistatus_response('/d:propstat/d:prop/d:resourcetype/d:collection').should_not be_empty
     end
 
     it 'should copy a collection resursively' do
@@ -283,7 +283,7 @@ describe RackDAV::Handler do
 
       copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
       propfind('/copy', :input => propfind_xml(:resourcetype))
-      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+      multistatus_response('/d:propstat/d:prop/d:resourcetype/d:collection').should_not be_empty
 
       get('/copy/a').body.should == 'A'
       get('/copy/b').body.should == 'B'
@@ -296,7 +296,7 @@ describe RackDAV::Handler do
 
       move('/folder', 'HTTP_DESTINATION' => '/move').should be_created
       propfind('/move', :input => propfind_xml(:resourcetype))
-      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+      multistatus_response('/d:propstat/d:prop/d:resourcetype/d:collection').should_not be_empty
 
       get('/move/a').body.should == 'A'
       get('/move/b').body.should == 'B'
@@ -307,7 +307,7 @@ describe RackDAV::Handler do
     it 'should create a collection' do
       mkcol('/folder').should be_created
       propfind('/folder', :input => propfind_xml(:resourcetype))
-      multistatus_response('/propstat/prop/resourcetype/collection').should_not be_empty
+      multistatus_response('/d:propstat/d:prop/d:resourcetype/d:collection').should_not be_empty
     end
 
     it 'should not find properties for nonexistent resources' do
@@ -323,11 +323,11 @@ describe RackDAV::Handler do
 
       propfind('http://localhost/', :input => xml)
 
-      multistatus_response('/href').first.text.strip.should == 'http://localhost/'
+      multistatus_response('/d:href').first.text.strip.should == 'http://localhost/'
 
       props = %w(creationdate displayname getlastmodified getetag resourcetype getcontenttype getcontentlength)
       props.each do |prop|
-        multistatus_response('/propstat/prop/' + prop).should_not be_empty
+        multistatus_response('/d:propstat/d:prop/d:' + prop).should_not be_empty
       end
     end
 
@@ -335,8 +335,8 @@ describe RackDAV::Handler do
       put('/test.html', :input => '<html/>').should be_ok
       propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
 
-      multistatus_response('/propstat/prop/getcontenttype').first.text.should == 'text/html'
-      multistatus_response('/propstat/prop/getcontentlength').first.text.should == '7'
+      multistatus_response('/d:propstat/d:prop/d:getcontenttype').first.text.should == 'text/html'
+      multistatus_response('/d:propstat/d:prop/d:getcontentlength').first.text.should == '7'
     end
 
     it 'should not support LOCK' do
@@ -380,12 +380,9 @@ describe RackDAV::Handler do
 
 
     def render
-      xml = Builder::XmlMarkup.new
-      xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
-      xml.namespace('d') do
+      Nokogiri::XML::Builder.new(:encoding => "UTF-8") do |xml|
         yield xml
-      end
-      xml.target!
+      end.to_xml
     end
 
     def url_escape(string)
@@ -395,35 +392,33 @@ describe RackDAV::Handler do
     end
 
     def response_xml
-      @response_xml ||= REXML::Document.new(@response.body)
+      @response_xml ||= Nokogiri::XML(@response.body)
     end
 
     def response_locktoken
-      REXML::XPath::match(response_xml,
-        "/prop/lockdiscovery/activelock/locktoken/href", '' => 'DAV:'
-      ).first.text
+      response_xml.xpath("/d:prop/d:lockdiscovery/d:activelock/d:locktoken/d:href", 'd' => 'DAV:').first.text
     end
 
     def lockdiscovery_response(token)
       match = lambda do |pattern|
-        REXML::XPath::match(response_xml, "/prop/lockdiscovery/activelock" + pattern, '' => 'DAV:')
+        response_xml.xpath("/d:prop/d:lockdiscovery/d:activelock" + pattern, 'd' => 'DAV:')
       end
 
       match[''].should_not be_empty
 
-      match['/locktype'].should_not be_empty
-      match['/lockscope'].should_not be_empty
-      match['/depth'].should_not be_empty
-      match['/owner'].should_not be_empty
-      match['/timeout'].should_not be_empty
-      match['/locktoken/href'].should_not be_empty
-      match['/locktoken/href'].first.text.should == token
+      match['/d:locktype'].should_not be_empty
+      match['/d:lockscope'].should_not be_empty
+      match['/d:depth'].should_not be_empty
+      match['/d:owner'].should_not be_empty
+      match['/d:timeout'].should_not be_empty
+      match['/d:locktoken/d:href'].should_not be_empty
+      match['/d:locktoken/d:href'].first.text.should == token
     end
 
     def multistatus_response(pattern)
       @response.should be_multi_status
-      REXML::XPath::match(response_xml, "/multistatus/response", '' => 'DAV:').should_not be_empty
-      REXML::XPath::match(response_xml, "/multistatus/response" + pattern, '' => 'DAV:')
+      response_xml.xpath("/d:multistatus/d:response", 'd' => 'DAV:').should_not be_empty
+      response_xml.xpath("/d:multistatus/d:response" + pattern, 'd' => 'DAV:')
     end
 
     def propfind_xml(*props)
@@ -431,7 +426,7 @@ describe RackDAV::Handler do
         xml.propfind('xmlns:d' => "DAV:") do
           xml.prop do
             props.each do |prop|
-            xml.tag! prop
+            xml.send prop.to_sym
             end
           end
         end
