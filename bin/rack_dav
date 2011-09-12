@@ -14,8 +14,10 @@ app = Rack::Builder.new do
 
 end.to_app
 
+port = ARGV.first || 3000
+
 begin
-  Rack::Handler::Mongrel.run(app, :Port => 3000)
+  Rack::Handler::Mongrel.run(app, :Port => port)
 rescue LoadError
-  Rack::Handler::WEBrick.run(app, :Port => 3000)
+  Rack::Handler::WEBrick.run(app, :Port => port)
 end
