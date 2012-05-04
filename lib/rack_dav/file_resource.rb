@@ -83,6 +83,10 @@ module RackDAV
     #
     # Save the content of the request.body.
     def put(request, response)
+      if request.env['HTTP_CONTENT_MD5']
+        content_md5_pass?(request.env) or raise HTTPStatus::BadRequest.new('Content-MD5 mismatch')
+      end
+
       write(request.body)
     end
 
@@ -160,6 +164,18 @@ module RackDAV
 
       def stat
         @stat ||= File.stat(file_path)
+      end
+
+      def content_md5_pass?(env)
+        expected = env['HTTP_CONTENT_MD5'] or return true
+
+        body   = env['rack.input'].dup
+        digest = Digest::MD5.new.digest(body.read)
+        actual = [ digest ].pack('m').strip
+
+        body.rewind
+
+        expected == actual
       end
 
   end
