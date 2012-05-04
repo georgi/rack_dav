@@ -179,6 +179,39 @@ describe RackDAV::Handler do
       end
     end
 
+    describe "CONTENT-MD5 header exists" do
+      context "doesn't match with body's checksum" do
+        before do
+          put('/foo', :input => 'bar',
+                      'HTTP_CONTENT_MD5' => 'baz')
+        end
+
+        it 'should return a Bad Request response' do
+          response.should be_bad_request
+        end
+
+        it 'should not create the resource' do
+          get('/foo').should be_not_found
+        end
+      end
+
+      context "matches with body's checksum" do
+        before do
+          put('/foo', :input => 'bar',
+                      'HTTP_CONTENT_MD5' => 'N7UdGUp1E+RbVvZSTy1R8g==')
+        end
+
+        it 'should be successful' do
+          response.should be_ok
+        end
+
+        it 'should create the resource' do
+          get('/foo').should be_ok
+          response.body.should == 'bar'
+        end
+      end
+    end
+
     it 'should return headers' do
       put('/test.html', :input => '<html/>').should be_ok
       head('/test.html').should be_ok
