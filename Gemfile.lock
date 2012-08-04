@@ -3,14 +3,15 @@ PATH
   specs:
     rack_dav (0.2.dev)
       nokogiri
-      rack (~> 1.2.0)
+      rack (~> 1.4.0)
 
 GEM
   remote: http://rubygems.org/
   specs:
     diff-lcs (1.1.2)
-    nokogiri (1.5.0)
-    rack (1.2.3)
+    nokogiri (1.5.5)
+    nokogiri (1.5.5-java)
+    rack (1.4.1)
     rspec (2.6.0)
       rspec-core (~> 2.6.0)
       rspec-expectations (~> 2.6.0)
