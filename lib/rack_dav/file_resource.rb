@@ -73,8 +73,7 @@ module RackDAV
         response.body = [content]
         response['Content-Length'] = content.size.to_s
       else
-        file = Rack::File.new(nil)
-        file.path = file_path
+        file = File.open(file_path)
         response.body = file
       end
     end
