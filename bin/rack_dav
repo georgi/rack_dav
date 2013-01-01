@@ -4,17 +4,18 @@ $:.unshift(File.expand_path("../../lib", __FILE__))
 
 require 'rack_dav'
 
-app = Rack::Builder.new do
+root=ARGV[1] || Dir.pwd
+port = ARGV[0] || 3000
+
+app = Rack::Builder.new do 
   use Rack::ShowExceptions
   use Rack::CommonLogger
   use Rack::Reloader
   use Rack::Lint
 
-  run RackDAV::Handler.new
+  run RackDAV::Handler.new(:root => root)
 
 end.to_app
-
-port = ARGV.first || 3000
 
 begin
   Rack::Handler::Mongrel.run(app, :Port => port)
