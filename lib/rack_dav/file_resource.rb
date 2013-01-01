@@ -71,7 +71,7 @@ module RackDAV
         content = ""
         Rack::Directory.new(root).call(request.env)[2].each { |line| content << line }
         response.body = [content]
-        response['Content-Length'] = content.size.to_s
+        response['Content-Length'] = (content.respond_to?(:bytesize) ? content.bytesize : content.size).to_s
       else
         file = File.open(file_path)
         response.body = file
