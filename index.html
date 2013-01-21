@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Rack dav by georgi</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/georgi/rack_dav">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/georgi/rack_dav/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/georgi/rack_dav/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Rack dav</h1>
+          <p>WEBDAV Handler for Rack</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/georgi">georgi</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></span>
+        </div>
+
+        <hr><h2>RackDAV - Web Authoring for Rack</h2>
+
+<p>RackDAV is Handler for <a href="http://github.com/chneukirchen/rack">Rack</a>, which allows content authoring over
+HTTP. RackDAV brings its own file backend, but other backends are
+possible by subclassing RackDAV::Resource.</p>
+
+<h2>Install</h2>
+
+<p>Just install the gem from RubyGems:</p>
+
+<pre><code>$ gem install rack_dav
+</code></pre>
+
+<h2>Quickstart</h2>
+
+<p>If you just want to share a folder over WebDAV, you can just start a
+simple server with:</p>
+
+<pre><code>$ rack_dav
+</code></pre>
+
+<p>This will start a WEBrick server on port 3000, which you can connect
+to without authentication.</p>
+
+<h2>Rack Handler</h2>
+
+<p>Using RackDAV inside a rack application is quite easy. A simple rackup
+script looks like this:</p>
+
+<pre><code>require 'rubygems'
+require 'rack_dav'
+
+use Rack::CommonLogger
+
+run RackDAV::Handler.new(:root =&gt; '/path/to/docs')
+</code></pre>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
