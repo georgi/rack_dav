@@ -166,6 +166,18 @@ describe RackDAV::Handler do
       )
     end
 
+    describe "uri escaping" do
+      it "allows url escaped utf-8" do
+        put('/D%C3%B6ner').should be_ok
+        get('/D%C3%B6ner').should be_ok
+      end
+
+      it "allows url escaped iso-8859" do
+        put('/D%F6ner').should be_ok
+        get('/D%F6ner').should be_ok
+      end
+    end
+
     describe "OPTIONS" do
       it "is successful" do
         options('/').should be_ok

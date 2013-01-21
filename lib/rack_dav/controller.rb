@@ -1,4 +1,7 @@
 require 'uri'
+
+require_relative 'string'
+
 module RackDAV
 
   class Controller
@@ -15,15 +18,11 @@ module RackDAV
     end
 
     def url_escape(s)
-      s.gsub(/([^\/a-zA-Z0-9_.-]+)/n) do
-        '%' + $1.unpack('H2' * ($1.respond_to?(:bytesize) ? $1.bytesize : $1.size)).join('%').upcase
-      end.tr(' ', '+')
+      URI.escape(s)
     end
 
     def url_unescape(s)
-      s.tr('+', ' ').gsub(/((?:%[0-9a-fA-F]{2})+)/n) do
-        URI.unescape($1).to_s
-      end.to_s
+      URI.unescape(s).force_valid_encoding
     end
 
     def options
