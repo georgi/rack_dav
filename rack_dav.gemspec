@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version       = RackDAV::VERSION
   s.author        = "Matthias Georgi"
   s.email         = "matti.georgi@gmail.com"
-  s.homepage      = "http://www.matthias-georgi.de/rack_dav"
+  s.homepage      = "http://georgi.github.com/rack_dav"
   s.summary       = "WebDAV handler for Rack."
   s.description   = "WebDAV handler for Rack."
 
