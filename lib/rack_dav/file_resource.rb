@@ -1,3 +1,5 @@
+require 'digest'
+
 module RackDAV
 
   class FileResource < Resource
