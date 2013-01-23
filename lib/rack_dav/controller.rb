@@ -343,7 +343,7 @@ module RackDAV
           yield xml
         end.to_xml
         response.body = [content]
-        response["Content-Type"] = 'text/xml; charset="utf-8"'
+        response["Content-Type"] = 'text/xml; charset=utf-8'
         response["Content-Length"] = Rack::Utils.bytesize(content).to_s
       end
 
