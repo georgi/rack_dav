@@ -1,5 +1,5 @@
 ---
-title: RackDAV - Web Authoring for Rack
+RackDAV - Web Authoring for Rack
 ---
 
 RackDAV is Handler for [Rack][1], which allows content authoring over
