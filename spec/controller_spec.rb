@@ -16,6 +16,14 @@ class Rack::MockResponse
 
   alias_method :initialize_without_original, :initialize
   alias_method :initialize, :initialize_with_original
+
+  def media_type_params
+    return {} if content_type.nil?
+    Hash[*content_type.split(/\s*[;,]\s*/)[1..-1].
+         collect { |s| s.split('=', 2) }.
+         map { |k,v| [k.downcase, v] }.flatten]
+  end
+
 end
 
 describe RackDAV::Handler do
@@ -233,6 +241,7 @@ describe RackDAV::Handler do
       response.headers['last-modified'].should_not be_nil
     end
 
+
     it 'should not find a nonexistent resource' do
       get('/not_found').should be_not_found
     end
@@ -382,6 +391,14 @@ describe RackDAV::Handler do
 
       multistatus_response('/d:propstat/d:prop/d:getcontenttype').first.text.should == 'text/html'
       multistatus_response('/d:propstat/d:prop/d:getcontentlength').first.text.should == '7'
+    end
+
+    it 'should return the correct charset (utf-8)' do
+      put('/test.html', :input => '<html/>').should be_ok
+      propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
+
+      charset = @response.media_type_params['charset']
+      charset.should eql 'utf-8'
     end
 
     it 'should not support LOCK' do
