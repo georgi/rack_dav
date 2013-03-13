@@ -85,7 +85,7 @@ to retrieve and change the resources:
 
 * __make\_collection__: Create this resource as collection.
 
-* __lock(token, timeout, scope, type, owner)__: Lock this resource.
+* __lock(locktoken, timeout, lockscope=nil, locktype=nil, owner=nil)__: Lock this resource.
   If scope, type and owner are nil, refresh the given lock.
 
 * __unlock(token)__: Unlock this resource
