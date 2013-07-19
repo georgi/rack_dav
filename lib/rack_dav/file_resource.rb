@@ -68,33 +68,33 @@ module RackDAV
     # HTTP GET request.
     #
     # Write the content of the resource to the response.body.
-    def get(request, response)
+    def get
       if stat.directory?
         content = ""
-        Rack::Directory.new(root).call(request.env)[2].each { |line| content << line }
-        response.body = [content]
-        response['Content-Length'] = (content.respond_to?(:bytesize) ? content.bytesize : content.size).to_s
+        Rack::Directory.new(root).call(@request.env)[2].each { |line| content << line }
+        @response.body = [content]
+        @response['Content-Length'] = (content.respond_to?(:bytesize) ? content.bytesize : content.size).to_s
       else
         file = File.open(file_path)
-        response.body = file
+        @response.body = file
       end
     end
 
     # HTTP PUT request.
     #
     # Save the content of the request.body.
-    def put(request, response)
-      if request.env['HTTP_CONTENT_MD5']
-        content_md5_pass?(request.env) or raise HTTPStatus::BadRequest.new('Content-MD5 mismatch')
+    def put
+      if @request.env['HTTP_CONTENT_MD5']
+        content_md5_pass?(@request.env) or raise HTTPStatus::BadRequest.new('Content-MD5 mismatch')
       end
 
-      write(request.body)
+      write(@request.body)
     end
 
     # HTTP POST request.
     #
     # Usually forbidden.
-    def post(request, response)
+    def post
       raise HTTPStatus::Forbidden
     end
 
