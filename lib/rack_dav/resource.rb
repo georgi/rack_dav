@@ -4,8 +4,10 @@ module RackDAV
 
     attr_reader :path, :options
 
-    def initialize(path, options)
+    def initialize(path, request, response, options)
       @path = path
+      @request = request
+      @response = response
       @options = options
     end
 
@@ -66,21 +68,21 @@ module RackDAV
     # HTTP GET request.
     #
     # Write the content of the resource to the response.body.
-    def get(request, response)
+    def get
       raise NotImplementedError
     end
 
     # HTTP PUT request.
     #
     # Save the content of the request.body.
-    def put(request, response)
+    def put
       raise NotImplementedError
     end
 
     # HTTP POST request.
     #
     # Usually forbidden.
-    def post(request, response)
+    def post
       raise NotImplementedError
     end
 
@@ -126,7 +128,7 @@ module RackDAV
     end
 
     def child(name, option={})
-      self.class.new(path + '/' + name, options)
+      self.class.new(path + '/' + name, @request, @response, options)
     end
 
     def lockable?

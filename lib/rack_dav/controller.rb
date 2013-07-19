@@ -13,7 +13,7 @@ module RackDAV
       @request  = request
       @response = response
       @options  = options
-      @resource = resource_class.new(url_unescape(request.path_info), @options)
+      @resource = resource_class.new(url_unescape(request.path_info), @request, @response, @options)
       raise Forbidden if request.path_info.include?('../')
     end
 
@@ -52,20 +52,20 @@ module RackDAV
       response['Content-Length'] = resource.content_length.to_s
       response['Last-Modified'] = resource.last_modified.httpdate
       map_exceptions do
-        resource.get(request, response)
+        resource.get
       end
     end
 
     def put
       raise Forbidden if resource.collection?
       map_exceptions do
-        resource.put(request, response)
+        resource.put
       end
     end
 
     def post
       map_exceptions do
-        resource.post(request, response)
+        resource.post
       end
     end
 
@@ -97,7 +97,7 @@ module RackDAV
       raise BadGateway if dest_uri.host and dest_uri.host != request.host
       raise Forbidden if destination == resource.path
 
-      dest = resource_class.new(destination, @options)
+      dest = resource_class.new(destination, @request, @response, @options)
       dest = dest.child(resource.name) if dest.collection?
 
       dest_existed = dest.exist?
@@ -124,7 +124,7 @@ module RackDAV
       raise BadGateway if dest_uri.host and dest_uri.host != request.host
       raise Forbidden if destination == resource.path
 
-      dest = resource_class.new(destination, @options)
+      dest = resource_class.new(destination, @request, @response, @options)
       dest = dest.child(resource.name) if dest.collection?
 
       dest_existed = dest.exist?
