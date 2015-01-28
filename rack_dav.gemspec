@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.homepage      = "http://georgi.github.com/rack_dav"
   s.summary       = "WebDAV handler for Rack."
   s.description   = "WebDAV handler for Rack."
+  s.license       = "MIT"
 
   s.files         = `git ls-files`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
@@ -17,8 +18,8 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = ["README.md"]
 
-  s.add_dependency("rack", ">= 1.4.0")
-  s.add_dependency('nokogiri')
-  s.add_development_dependency("rspec", ">= 2.11.0")
-  s.add_development_dependency("rake",">= 0.9.0")
+  s.add_dependency("rack", "~> 1.4")
+  s.add_dependency('nokogiri', "~> 1.5")
+  s.add_development_dependency("rspec", "~> 2.11")
+  s.add_development_dependency("rake","~> 0.9")
 end
