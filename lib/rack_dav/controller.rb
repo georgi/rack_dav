@@ -296,8 +296,13 @@ module RackDAV
       end
 
       def request_document
-        @request_document ||= Nokogiri::XML(request.body.read) {|config| config.strict }
-      rescue Nokogiri::XML::SyntaxError
+        @request_document ||= if (body = request.body.read).empty?
+          Nokogiri::XML::Document.new
+        else
+          Nokogiri::XML(body, &:strict)
+        end
+
+      rescue Nokogiri::XML::SyntaxError, RuntimeError # Nokogiri raise RuntimeError :-(
         raise BadRequest
       end
 
