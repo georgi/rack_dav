@@ -61,6 +61,7 @@ module RackDAV
       map_exceptions do
         resource.put
       end
+      response.status = Created
     end
 
     def post
