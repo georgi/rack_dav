@@ -66,7 +66,7 @@ describe RackDAV::Handler do
 
     describe "LOCK" do
       before(:each) do
-        put("/test", :input => "body").should be_ok
+        put("/test", :input => "body").should be_created
         lock("/test", :input => File.read(fixture("requests/lock.xml")))
       end
 
@@ -128,7 +128,7 @@ describe RackDAV::Handler do
 
     describe "UNLOCK" do
       before(:each) do
-        put("/test", :input => "body").should be_ok
+        put("/test", :input => "body").should be_created
         lock("/test", :input => File.read(fixture("requests/lock.xml"))).should be_ok
       end
 
@@ -176,12 +176,12 @@ describe RackDAV::Handler do
 
     describe "uri escaping" do
       it "allows url escaped utf-8" do
-        put('/D%C3%B6ner').should be_ok
+        put('/D%C3%B6ner').should be_created
         get('/D%C3%B6ner').should be_ok
       end
 
       it "allows url escaped iso-8859" do
-        put('/D%F6ner').should be_ok
+        put('/D%F6ner').should be_created
         get('/D%F6ner').should be_ok
       end
     end
@@ -222,7 +222,7 @@ describe RackDAV::Handler do
         end
 
         it 'should be successful' do
-          response.should be_ok
+          response.should be_created
         end
 
         it 'should create the resource' do
@@ -233,7 +233,7 @@ describe RackDAV::Handler do
     end
 
     it 'should return headers' do
-      put('/test.html', :input => '<html/>').should be_ok
+      put('/test.html', :input => '<html/>').should be_created
       head('/test.html').should be_ok
 
       response.headers['etag'].should_not be_nil
@@ -251,25 +251,25 @@ describe RackDAV::Handler do
     end
 
     it 'should create a resource and allow its retrieval' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
       get('/test').should be_ok
       response.body.should == 'body'
     end
     it 'should create and find a url with escaped characters' do
-      put(url_escape('/a b'), :input => 'body').should be_ok
+      put(url_escape('/a b'), :input => 'body').should be_created
       get(url_escape('/a b')).should be_ok
       response.body.should == 'body'
     end
 
     it 'should delete a single resource' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
       delete('/test').should be_no_content
     end
 
     it 'should delete recursively' do
       mkcol('/folder').should be_created
-      put('/folder/a', :input => 'body').should be_ok
-      put('/folder/b', :input => 'body').should be_ok
+      put('/folder/a', :input => 'body').should be_created
+      put('/folder/b', :input => 'body').should be_created
 
       delete('/folder').should be_no_content
       get('/folder').should be_not_found
@@ -278,36 +278,36 @@ describe RackDAV::Handler do
     end
 
     it 'should not allow copy to another domain' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
       copy('http://localhost/', 'HTTP_DESTINATION' => 'http://another/').should be_bad_gateway
     end
 
     it 'should not allow copy to the same resource' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
       copy('/test', 'HTTP_DESTINATION' => '/test').should be_forbidden
     end
 
     it 'should not allow an invalid destination uri' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
       copy('/test', 'HTTP_DESTINATION' => '%').should be_bad_request
     end
 
     it 'should copy a single resource' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
       copy('/test', 'HTTP_DESTINATION' => '/copy').should be_created
       get('/copy').body.should == 'body'
     end
 
     it 'should copy a resource with escaped characters' do
-      put(url_escape('/a b'), :input => 'body').should be_ok
+      put(url_escape('/a b'), :input => 'body').should be_created
       copy(url_escape('/a b'), 'HTTP_DESTINATION' => url_escape('/a c')).should be_created
       get(url_escape('/a c')).should be_ok
       response.body.should == 'body'
     end
 
     it 'should deny a copy without overwrite' do
-      put('/test', :input => 'body').should be_ok
-      put('/copy', :input => 'copy').should be_ok
+      put('/test', :input => 'body').should be_created
+      put('/copy', :input => 'copy').should be_created
       copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F')
 
       multistatus_response('/d:href').first.text.should == 'http://localhost/test'
@@ -317,8 +317,8 @@ describe RackDAV::Handler do
     end
 
     it 'should allow a copy with overwrite' do
-      put('/test', :input => 'body').should be_ok
-      put('/copy', :input => 'copy').should be_ok
+      put('/test', :input => 'body').should be_created
+      put('/copy', :input => 'copy').should be_created
       copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'T').should be_no_content
       get('/copy').body.should == 'body'
     end
@@ -332,8 +332,8 @@ describe RackDAV::Handler do
 
     it 'should copy a collection resursively' do
       mkcol('/folder').should be_created
-      put('/folder/a', :input => 'A').should be_ok
-      put('/folder/b', :input => 'B').should be_ok
+      put('/folder/a', :input => 'A').should be_created
+      put('/folder/b', :input => 'B').should be_created
 
       copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
       propfind('/copy', :input => propfind_xml(:resourcetype))
@@ -345,8 +345,8 @@ describe RackDAV::Handler do
 
     it 'should move a collection recursively' do
       mkcol('/folder').should be_created
-      put('/folder/a', :input => 'A').should be_ok
-      put('/folder/b', :input => 'B').should be_ok
+      put('/folder/a', :input => 'A').should be_created
+      put('/folder/b', :input => 'B').should be_created
 
       move('/folder', 'HTTP_DESTINATION' => '/move').should be_created
       propfind('/move', :input => propfind_xml(:resourcetype))
@@ -386,7 +386,7 @@ describe RackDAV::Handler do
     end
 
     it 'should find named properties' do
-      put('/test.html', :input => '<html/>').should be_ok
+      put('/test.html', :input => '<html/>').should be_created
       propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
 
       multistatus_response('/d:propstat/d:prop/d:getcontenttype').first.text.should == 'text/html'
@@ -394,7 +394,7 @@ describe RackDAV::Handler do
     end
 
     it 'should return the correct charset (utf-8)' do
-      put('/test.html', :input => '<html/>').should be_ok
+      put('/test.html', :input => '<html/>').should be_created
       propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
 
       charset = @response.media_type_params['charset']
@@ -402,7 +402,7 @@ describe RackDAV::Handler do
     end
 
     it 'should not support LOCK' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
 
       xml = render do |xml|
         xml.lockinfo('xmlns:d' => "DAV:") do
@@ -416,7 +416,7 @@ describe RackDAV::Handler do
     end
 
     it 'should not support UNLOCK' do
-      put('/test', :input => 'body').should be_ok
+      put('/test', :input => 'body').should be_created
       unlock('/test', :input => '').should be_method_not_allowed
     end
 
