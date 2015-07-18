@@ -83,6 +83,10 @@ module RackDAV
     end
 
     def mkcol
+      # Reject message bodies - RFC2518:8.3.1
+      body = @request.body.read(8)
+      fail UnsupportedMediaType if !body.nil? && body.length > 0
+
       map_exceptions do
         resource.make_collection
       end
