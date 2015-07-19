@@ -364,6 +364,10 @@ describe RackDAV::Handler do
       multistatus_response('/d:propstat/d:prop/d:resourcetype/d:collection').should_not be_empty
     end
 
+    it 'should not create a collection with a body' do
+      mkcol('/folder', :input => 'body').should be_unsupported_media_type
+    end
+
     it 'should not find properties for nonexistent resources' do
       propfind('/non').should be_not_found
     end
