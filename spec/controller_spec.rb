@@ -78,7 +78,7 @@ describe RackDAV::Handler do
         it "sets a compliant rack response" do
           body = response.original_response.body
           body.should be_a(Array)
-          body.should have(1).part
+          expect(body.size).to eq(1)
         end
 
         it "prints the lockdiscovery" do
