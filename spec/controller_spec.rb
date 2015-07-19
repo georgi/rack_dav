@@ -358,6 +358,13 @@ describe RackDAV::Handler do
       get('/folder/b').should be_not_found
     end
 
+    it 'should not move a collection onto an existing collection without overwrite' do
+      mkcol('/folder').should be_created
+      mkcol('/dest').should be_created
+
+      move('/folder', 'HTTP_DESTINATION' => '/dest', 'HTTP_OVERWRITE' => 'F').should be_precondition_failed
+    end
+
     it 'should create a collection' do
       mkcol('/folder').should be_created
       propfind('/folder', :input => propfind_xml(:resourcetype))
