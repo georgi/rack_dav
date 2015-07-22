@@ -103,6 +103,8 @@ module RackDAV
       raise Forbidden if destination == resource.path
 
       dest = resource_class.new(destination, @request, @response, @options)
+      raise PreconditionFailed if dest.exist? && !overwrite
+
       dest = dest.child(resource.name) if dest.collection?
 
       dest_existed = dest.exist?
