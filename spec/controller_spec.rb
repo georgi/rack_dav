@@ -308,10 +308,7 @@ describe RackDAV::Handler do
     it 'should deny a copy without overwrite' do
       put('/test', :input => 'body').should be_created
       put('/copy', :input => 'copy').should be_created
-      copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F')
-
-      multistatus_response('/d:href').first.text.should == 'http://localhost/test'
-      multistatus_response('/d:status').first.text.should match(/412 Precondition Failed/)
+      copy('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F').should be_precondition_failed
 
       get('/copy').body.should == 'copy'
     end
