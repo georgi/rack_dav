@@ -323,6 +323,12 @@ describe RackDAV::Handler do
       get('/copy').body.should == 'body'
     end
 
+    it 'should deny a move to an existing resource without overwrite' do
+      put('/test', :input => 'body').should be_created
+      put('/copy', :input => 'copy').should be_created
+      move('/test', 'HTTP_DESTINATION' => '/copy', 'HTTP_OVERWRITE' => 'F').should be_precondition_failed
+    end
+
     it 'should copy a collection' do
       mkcol('/folder').should be_created
       copy('/folder', 'HTTP_DESTINATION' => '/copy').should be_created
