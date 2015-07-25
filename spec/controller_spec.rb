@@ -277,6 +277,10 @@ describe RackDAV::Handler do
       get('/folder/b').should be_not_found
     end
 
+    it 'should return not found when deleting a non-existent resource' do
+      delete('/not_found').should be_not_found
+    end
+
     it 'should not allow copy to another domain' do
       put('/test', :input => 'body').should be_created
       copy('http://localhost/', 'HTTP_DESTINATION' => 'http://another/').should be_bad_gateway

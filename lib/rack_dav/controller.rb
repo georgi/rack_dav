@@ -71,6 +71,8 @@ module RackDAV
     end
 
     def delete
+      raise NotFound if not resource.exist?
+
       delete_recursive(resource, errors = [])
 
       if errors.empty?
