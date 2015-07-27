@@ -159,24 +159,25 @@ module RackDAV
       raise NotFound if not resource.exist?
 
       if not request_match("/d:propfind/d:allprop").empty?
-        nodes = resource.property_names.map { |e| Nokogiri::XML::Element.new(e, request_document) }
+        nodes = all_prop_nodes
       else
         nodes = request_match("/d:propfind/d:prop/*")
-        nodes = resource.property_names.map { |e| Nokogiri::XML::Element.new(e, request_document) } if nodes.empty?
-        raise BadRequest if nodes.empty?
+        nodes = all_prop_nodes if nodes.empty?
       end
 
-      # Don't allow empty namespace declarations
-      # See litmus props test 3
       nodes.each do |n|
-        raise BadRequest if n.namespace_definitions.empty?
+        # Don't allow empty namespace declarations
+        # See litmus props test 3
+        raise BadRequest if n.namespace.nil? && n.namespace_definitions.empty?
 
         # Set a blank namespace if one is included in the request
         # See litmus props test 16
         # <propfind xmlns="DAV:"><prop><nonamespace xmlns=""/></prop></propfind>
-        nd = n.namespace_definitions.first
-        if nd.prefix.nil? && nd.href.empty?
-          n.add_namespace(nil, '')
+        if n.namespace.nil?
+          nd = n.namespace_definitions.first
+          if nd.prefix.nil? && nd.href.empty?
+            n.add_namespace(nil, '')
+          end
         end
       end
 
@@ -349,6 +350,14 @@ module RackDAV
 
       def qualified_property_name(node)
         node.namespace.nil? || node.namespace.href == 'DAV:' ? node.name : "{#{node.namespace.href}}#{node.name}"
+      end
+
+      def all_prop_nodes
+        resource.property_names.map do |n|
+          node = Nokogiri::XML::Element.new(n, request_document)
+          node.add_namespace(nil, 'DAV:')
+          node
+        end
       end
 
       # Quick and dirty parsing of the WEBDAV Timeout header.
