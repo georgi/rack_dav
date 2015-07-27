@@ -166,6 +166,20 @@ module RackDAV
         raise BadRequest if nodes.empty?
       end
 
+      # Don't allow empty namespace declarations
+      # See litmus props test 3
+      nodes.each do |n|
+        raise BadRequest if n.namespace_definitions.empty?
+
+        # Set a blank namespace if one is included in the request
+        # See litmus props test 16
+        # <propfind xmlns="DAV:"><prop><nonamespace xmlns=""/></prop></propfind>
+        nd = n.namespace_definitions.first
+        if nd.prefix.nil? && nd.href.empty?
+          n.add_namespace(nil, '')
+        end
+      end
+
       multistatus do |xml|
         for resource in find_resources
           resource.path.gsub!(/\/\//, '/')
@@ -182,6 +196,18 @@ module RackDAV
 
       prop_rem = request_match("/d:propertyupdate/d:remove/d:prop/*")
       prop_set = request_match("/d:propertyupdate/d:set/d:prop/*")
+
+      # Set a blank namespace if one is included in the request
+      # See litmus props test 15
+      # <propertyupdate xmlns="DAV:"><set>
+      #   <prop><nonamespace xmlns="">randomvalue</nonamespace></prop>
+      # </set></propertyupdate>
+      [prop_rem, prop_set].flatten.each do |n|
+        nd = n.namespace_definitions.first
+        if nd.prefix.nil? && nd.href.empty?
+          n.add_namespace(nil, '')
+        end
+      end
 
       multistatus do |xml|
         for resource in find_resources
