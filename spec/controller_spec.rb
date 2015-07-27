@@ -388,7 +388,7 @@ describe RackDAV::Handler do
 
     it 'should find all properties' do
       xml = render do |xml|
-        xml.propfind('xmlns:d' => "DAV:") do
+        xml.propfind('xmlns' => "DAV:") do
           xml.allprop
         end
       end
@@ -503,7 +503,7 @@ describe RackDAV::Handler do
 
     def propfind_xml(*props)
       render do |xml|
-        xml.propfind('xmlns:d' => "DAV:") do
+        xml.propfind('xmlns' => "DAV:") do
           xml.prop do
             props.each do |prop|
             xml.send prop.to_sym
