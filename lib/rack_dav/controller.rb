@@ -159,11 +159,11 @@ module RackDAV
       raise NotFound if not resource.exist?
 
       if not request_match("/d:propfind/d:allprop").empty?
-        names = resource.property_names
+        nodes = resource.property_names.map { |e| Nokogiri::XML::Element.new(e, request_document) }
       else
-        names = request_match("/d:propfind/d:prop/d:*").map { |e| e.name }
-        names = resource.property_names if names.empty?
-        raise BadRequest if names.empty?
+        nodes = request_match("/d:propfind/d:prop/*")
+        nodes = resource.property_names.map { |e| Nokogiri::XML::Element.new(e, request_document) } if nodes.empty?
+        raise BadRequest if nodes.empty?
       end
 
       multistatus do |xml|
@@ -171,7 +171,7 @@ module RackDAV
           resource.path.gsub!(/\/\//, '/')
           xml.response do
             xml.href "http://#{host}#{url_escape resource.path}"
-            propstats xml, get_properties(resource, names)
+            propstats xml, get_properties(resource, nodes)
           end
         end
       end
@@ -180,19 +180,18 @@ module RackDAV
     def proppatch
       raise NotFound if not resource.exist?
 
-      prop_rem = request_match("/d:propertyupdate/d:remove/d:prop/d:*").map { |e| [e.name] }
-      prop_set = request_match("/d:propertyupdate/d:set/d:prop/d:*").map { |e| [e.name, e.text] }
+      prop_rem = request_match("/d:propertyupdate/d:remove/d:prop/*")
+      prop_set = request_match("/d:propertyupdate/d:set/d:prop/*")
 
       multistatus do |xml|
         for resource in find_resources
           xml.response do
             xml.href "http://#{host}#{resource.path}"
             propstats xml, set_properties(resource, prop_set)
+            propstats xml, set_properties(resource, prop_rem)
           end
         end
       end
-
-      resource.save
     end
 
     def lock
@@ -320,6 +319,14 @@ module RackDAV
         request_document.xpath(pattern, 'd' => 'DAV:')
       end
 
+      def qualified_node_name(node)
+        node.namespace.nil? || node.namespace.prefix.nil? ? node.name : "#{node.namespace.prefix}:#{node.name}"
+      end
+
+      def qualified_property_name(node)
+        node.namespace.nil? || node.namespace.href == 'DAV:' ? node.name : "{#{node.namespace.href}}#{node.name}"
+      end
+
       # Quick and dirty parsing of the WEBDAV Timeout header.
       # Refuses infinity, rejects anything but Second- timeouts
       #
@@ -381,29 +388,29 @@ module RackDAV
         end
       end
 
-      def get_properties(resource, names)
+      def get_properties(resource, nodes)
         stats = Hash.new { |h, k| h[k] = [] }
-        for name in names
+        for node in nodes
           begin
             map_exceptions do
-              stats[OK] << [name, resource.get_property(name)]
+              stats[OK] << [node, resource.get_property(qualified_property_name(node))]
             end
           rescue Status
-            stats[$!] << name
+            stats[$!] << node
           end
         end
         stats
       end
 
-      def set_properties(resource, pairs)
+      def set_properties(resource, nodes)
         stats = Hash.new { |h, k| h[k] = [] }
-        for name, value in pairs
+        for node in nodes
           begin
             map_exceptions do
-              stats[OK] << [name, resource.set_property(name, value)]
+              stats[OK] << [node, resource.set_property(qualified_property_name(node), node.text)]
             end
           rescue Status
-            stats[$!] << name
+            stats[$!] << node
           end
         end
         stats
@@ -414,13 +421,22 @@ module RackDAV
         for status, props in stats
           xml.propstat do
             xml.prop do
-              for name, value in props
+              for node, value in props
                 if value.is_a?(Nokogiri::XML::Node)
-                  xml.send(name) do
+                  xml.send(qualified_node_name(node).to_sym) do
                     rexml_convert(xml, value)
                   end
                 else
-                  xml.send(name, value)
+                  attrs = {}
+                  unless node.namespace.nil?
+                    unless node.namespace.prefix.nil?
+                      attrs = { "xmlns:#{node.namespace.prefix}" => node.namespace.href }
+                    else
+                      attrs = { 'xmlns' => node.namespace.href }
+                    end
+                  end
+
+                  xml.send(qualified_node_name(node).to_sym, value, attrs)
                 end
               end
             end
