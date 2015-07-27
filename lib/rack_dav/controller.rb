@@ -194,15 +194,14 @@ module RackDAV
     def proppatch
       raise NotFound if not resource.exist?
 
-      prop_rem = request_match("/d:propertyupdate/d:remove/d:prop/*")
-      prop_set = request_match("/d:propertyupdate/d:set/d:prop/*")
+      nodes = request_match("/d:propertyupdate[d:remove/d:prop/* or d:set/d:prop/*]//d:prop/*")
 
       # Set a blank namespace if one is included in the request
       # See litmus props test 15
       # <propertyupdate xmlns="DAV:"><set>
       #   <prop><nonamespace xmlns="">randomvalue</nonamespace></prop>
       # </set></propertyupdate>
-      [prop_rem, prop_set].flatten.each do |n|
+      nodes.each do |n|
         nd = n.namespace_definitions.first
         if nd.prefix.nil? && nd.href.empty?
           n.add_namespace(nil, '')
@@ -213,8 +212,7 @@ module RackDAV
         for resource in find_resources
           xml.response do
             xml.href "http://#{host}#{resource.path}"
-            propstats xml, set_properties(resource, prop_set)
-            propstats xml, set_properties(resource, prop_rem)
+            propstats xml, set_properties(resource, nodes)
           end
         end
       end
