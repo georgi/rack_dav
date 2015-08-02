@@ -204,7 +204,7 @@ module RackDAV
       # </set></propertyupdate>
       nodes.each do |n|
         nd = n.namespace_definitions.first
-        if nd.prefix.nil? && nd.href.empty?
+        if !nd.nil? && nd.prefix.nil? && nd.href.empty?
           n.add_namespace(nil, '')
         end
       end
