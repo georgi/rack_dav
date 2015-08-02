@@ -26,6 +26,12 @@ class Rack::MockResponse
 
 end
 
+if ENV['TRAVIS']
+  RSpec.configure do |c|
+    c.filter_run_excluding :has_xattr_support => true
+  end
+end
+
 describe RackDAV::Handler do
 
   DOC_ROOT = File.expand_path(File.dirname(__FILE__) + '/htdocs')
@@ -411,7 +417,7 @@ describe RackDAV::Handler do
       multistatus_response('/d:propstat/d:prop/d:getcontentlength').first.text.should == '7'
     end
 
-    it 'should set custom properties in the dav namespace' do
+    it 'should set custom properties in the dav namespace', :has_xattr_support => true do
       put('/prop', :input => 'A').should be_created
       proppatch('/prop', :input => propset_xml([:foo, 'testing']))
       multistatus_response('/d:propstat/d:prop/d:foo').should_not be_empty
@@ -420,7 +426,7 @@ describe RackDAV::Handler do
       multistatus_response('/d:propstat/d:prop/d:foo').first.text.should == 'testing'
     end
 
-    it 'should set custom properties in custom namespaces' do
+    it 'should set custom properties in custom namespaces', :has_xattr_support => true do
       xmlns = { 'xmlns:s' => 'SPEC:' }
       put('/prop', :input => 'A').should be_created
       proppatch('/prop', :input => propset_xml(['s:foo'.to_sym, 'testing', xmlns]))
@@ -430,7 +436,7 @@ describe RackDAV::Handler do
       multistatus_response('/d:propstat/d:prop/s:foo', xmlns).first.text.should == 'testing'
     end
 
-    it 'should copy custom properties' do
+    it 'should copy custom properties', :has_xattr_support => true do
       xmlns = { 'xmlns:s' => 'SPEC:' }
       put('/prop', :input => 'A').should be_created
       proppatch('/prop', :input => propset_xml(['s:foo'.to_sym, 'testing', xmlns]))
