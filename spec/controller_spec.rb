@@ -411,6 +411,44 @@ describe RackDAV::Handler do
       multistatus_response('/d:propstat/d:prop/d:getcontentlength').first.text.should == '7'
     end
 
+    it 'should set custom properties in the dav namespace' do
+      put('/prop', :input => 'A').should be_created
+      proppatch('/prop', :input => propset_xml([:foo, 'testing']))
+      multistatus_response('/d:propstat/d:prop/d:foo').should_not be_empty
+
+      propfind('/prop', :input => propfind_xml(:foo))
+      multistatus_response('/d:propstat/d:prop/d:foo').first.text.should == 'testing'
+    end
+
+    it 'should set custom properties in custom namespaces' do
+      xmlns = { 'xmlns:s' => 'SPEC:' }
+      put('/prop', :input => 'A').should be_created
+      proppatch('/prop', :input => propset_xml(['s:foo'.to_sym, 'testing', xmlns]))
+      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).should_not be_empty
+
+      propfind('/prop', :input => propfind_xml(['s:foo'.to_sym, xmlns]))
+      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).first.text.should == 'testing'
+    end
+
+    it 'should copy custom properties' do
+      xmlns = { 'xmlns:s' => 'SPEC:' }
+      put('/prop', :input => 'A').should be_created
+      proppatch('/prop', :input => propset_xml(['s:foo'.to_sym, 'testing', xmlns]))
+      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).should_not be_empty
+
+      copy('/prop', 'HTTP_DESTINATION' => '/propcopy').should be_created
+      propfind('/propcopy', :input => propfind_xml(['s:foo'.to_sym, xmlns]))
+      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).first.text.should == 'testing'
+    end
+
+    it 'should not set properties for a non-existent resource' do
+      proppatch('/not_found', :input => propset_xml([:foo, 'testing'])).should be_not_found
+    end
+
+    it 'should not return properties for non-existent resource' do
+      propfind('/prop', :input => propfind_xml(:foo)).should be_not_found
+    end
+
     it 'should return the correct charset (utf-8)' do
       put('/test.html', :input => '<html/>').should be_created
       propfind('/test.html', :input => propfind_xml(:getcontenttype, :getcontentlength))
@@ -495,22 +533,39 @@ describe RackDAV::Handler do
       match['/d:locktoken/d:href'].first.text.should == token
     end
 
-    def multistatus_response(pattern)
+    def multistatus_response(pattern, ns=nil)
+      xmlns = { 'd' => 'DAV:' }
+      xmlns.merge!(ns) unless ns.nil?
+
       @response.should be_multi_status
-      response_xml.xpath("/d:multistatus/d:response", 'd' => 'DAV:').should_not be_empty
-      response_xml.xpath("/d:multistatus/d:response" + pattern, 'd' => 'DAV:')
+      response_xml.xpath("/d:multistatus/d:response", xmlns).should_not be_empty
+      response_xml.xpath("/d:multistatus/d:response" + pattern, xmlns)
     end
 
     def propfind_xml(*props)
       render do |xml|
         xml.propfind('xmlns' => "DAV:") do
           xml.prop do
-            props.each do |prop|
-            xml.send prop.to_sym
+            props.each do |prop, attrs|
+              xml.send(prop.to_sym, attrs)
             end
           end
         end
       end
     end
 
+    def propset_xml(*props)
+      render do |xml|
+        xml.propertyupdate('xmlns' => 'DAV:') do
+          xml.set do
+            xml.prop do
+              props.each do |prop, value, attrs|
+                attrs = {} if attrs.nil?
+                xml.send(prop.to_sym, value, attrs)
+              end
+            end
+          end
+        end
+      end
+    end
 end
