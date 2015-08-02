@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency("rack", "~> 1.4")
   s.add_dependency('nokogiri', "~> 1.5")
+  s.add_dependency("ffi-xattr", "~> 0.1")
   s.add_development_dependency("rspec", "~> 2.11")
   s.add_development_dependency("rake","~> 0.9")
 end

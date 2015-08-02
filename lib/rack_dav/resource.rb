@@ -148,6 +148,7 @@ module RackDAV
       when 'getcontenttype'   then content_type
       when 'getetag'          then etag
       when 'getlastmodified'  then last_modified.httpdate
+      else self.get_custom_property(name) if self.respond_to?(:get_custom_property)
       end
     end
 
@@ -157,13 +158,14 @@ module RackDAV
       when 'getcontenttype'  then self.content_type = value
       when 'getetag'         then self.etag = value
       when 'getlastmodified' then self.last_modified = Time.httpdate(value)
+      else self.set_custom_property(name, value) if self.respond_to?(:set_custom_property)
       end
     rescue ArgumentError
       raise HTTPStatus::Conflict
     end
 
     def remove_property(name)
-      raise HTTPStatus::Forbidden
+      raise HTTPStatus::Forbidden if property_names.include?(name)
     end
 
     def parent

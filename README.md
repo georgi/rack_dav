@@ -29,9 +29,9 @@ script looks like this:
 
     require 'rubygems'
     require 'rack_dav'
-    
+
     use Rack::CommonLogger
-    
+
     run RackDAV::Handler.new(:root => '/path/to/docs')
 
 ## Implementing your own WebDAV resource
@@ -84,6 +84,10 @@ to retrieve and change the resources:
 * __move(dest)__: Move this resource to given destination resource.
 
 * __make\_collection__: Create this resource as collection.
+
+* __set_custom_property(name, value)__: Set a custom property on the resource. If the value is nil, delete the custom property.
+
+* __get_custom_property(name)__: Return the value of the named custom property.
 
 * __lock(locktoken, timeout, lockscope=nil, locktype=nil, owner=nil)__: Lock this resource.
   If scope, type and owner are nil, refresh the given lock.

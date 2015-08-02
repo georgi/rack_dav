@@ -1,4 +1,5 @@
 require 'digest'
+require 'ffi-xattr'
 
 module RackDAV
 
@@ -65,6 +66,28 @@ module RackDAV
       stat.size
     end
 
+    def set_custom_property(name, value)
+      if value.nil? || value.empty?
+        begin
+          xattr.remove("rack_dav:#{name}")
+        rescue Errno::ENOATTR
+          # If the attribute being deleted doesn't exist, just do nothing
+        end
+      else
+        xattr["rack_dav:#{name}"] = value
+      end
+    end
+
+    def get_custom_property(name)
+      value = xattr["rack_dav:#{name}"]
+      raise HTTPStatus::NotFound if value.nil?
+      value
+    end
+
+    def list_custom_properties
+      xattr.list.select { |a| a.start_with?('rack_dav') }.map { |a| a.sub(/^rack_dav:/, '') }
+    end
+
     # HTTP GET request.
     #
     # Write the content of the resource to the response.body.
@@ -119,6 +142,10 @@ module RackDAV
         open(file_path, "rb") do |file|
           dest.write(file)
         end
+
+        list_custom_properties.each do |prop|
+          dest.set_custom_property(prop, get_custom_property(prop))
+        end
       end
     end
 
@@ -165,6 +192,10 @@ module RackDAV
 
       def stat
         @stat ||= File.stat(file_path)
+      end
+
+      def xattr
+        @xattr ||= Xattr.new(file_path)
       end
 
       def content_md5_pass?(env)
