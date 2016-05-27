@@ -99,7 +99,7 @@ module RackDAV
       raise NotFound if not resource.exist?
 
       dest_uri = URI.parse(env['HTTP_DESTINATION'])
-      destination = url_unescape(dest_uri.path)
+      destination = parse_destination(dest_uri)
 
       raise BadGateway if dest_uri.host and dest_uri.host != request.host
       raise Forbidden if destination == resource.path
@@ -128,7 +128,7 @@ module RackDAV
       raise NotFound if not resource.exist?
 
       dest_uri = URI.parse(env['HTTP_DESTINATION'])
-      destination = url_unescape(dest_uri.path)
+      destination = parse_destination(dest_uri)
 
       raise BadGateway if dest_uri.host and dest_uri.host != request.host
       raise Forbidden if destination == resource.path
@@ -185,7 +185,7 @@ module RackDAV
         for resource in find_resources
           resource.path.gsub!(/\/\//, '/')
           xml.response do
-            xml.href "http://#{host}#{url_escape resource.path}"
+            xml.href "http://#{host}#{@request.script_name}#{url_escape resource.path}"
             propstats xml, get_properties(resource, nodes)
           end
         end
@@ -212,7 +212,7 @@ module RackDAV
       multistatus do |xml|
         for resource in find_resources
           xml.response do
-            xml.href "http://#{host}#{resource.path}"
+            xml.href "http://#{host}#{@request.script_name}#{resource.path}"
             propstats xml, set_properties(resource, nodes)
           end
         end
@@ -251,7 +251,7 @@ module RackDAV
       end
 
       def host
-        env['HTTP_HOST']
+        @request.host
       end
 
       def resource_class
@@ -550,6 +550,12 @@ module RackDAV
             end
           end
         end
+      end
+
+      def parse_destination dest_uri
+        destination = url_unescape(dest_uri.path)
+        destination.slice!(1..@request.script_name.length) if @request.script_name.length > 0
+        destination
       end
 
   end
