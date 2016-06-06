@@ -5,6 +5,12 @@ require 'rack/mock'
 
 require 'support/lockable_file_resource'
 
+# This is required to be able to send bare plus symbols in mock
+# request URLs
+class Rack::MockRequest
+  @parser = URI
+end
+
 class Rack::MockResponse
 
   attr_reader :original_response
@@ -206,6 +212,34 @@ describe RackDAV::Handler do
       it "allows url escaped iso-8859" do
         put(url_root + 'D%F6ner').should be_created
         get(url_root + 'D%F6ner').should be_ok
+      end
+
+      it "treats '+' and '%20' as space" do
+        mkcol(url_root + 'folder+1').should be_created
+        put(url_root + 'folder+1/test+1').should be_created
+        get(url_root + "folder+1/test+1").should be_ok
+        get(url_root + "#{url_escape 'folder 1'}/#{url_escape 'test 1'}").should be_ok
+        get(url_root + "folder%201/test%201").should be_ok
+
+        mkcol(url_root + 'folder%202').should be_created
+        put(url_root + 'folder%202/test%202').should be_created
+        get(url_root + "folder+2/test+2").should be_ok
+        get(url_root + "#{url_escape 'folder 2'}/#{url_escape 'test 2'}").should be_ok
+        get(url_root + "folder%202/test%202").should be_ok
+      end
+
+      it "treats '%2B' as a plus" do
+        mkcol(url_root + 'folder%2B3').should be_created
+        put(url_root + 'folder%2B3/test%2B3').should be_created
+        get(url_root + "folder%2B3/test%2B3").should be_ok
+        get(url_root + "#{url_escape 'folder+3'}/#{url_escape 'test+3'}").should be_ok
+        get(url_root + "folder+3/test+3").should_not be_ok
+
+        mkcol(url_root + url_escape('folder+4')).should be_created
+        put(url_root + "#{url_escape 'folder+4'}/#{url_escape 'test+4'}").should be_created
+        get(url_root + "#{url_escape 'folder+3'}/#{url_escape 'test+3'}").should be_ok
+        get(url_root + "folder%2B4/test%2B4").should be_ok
+        get(url_root + "folder+4/test+4").should_not be_ok
       end
     end
 

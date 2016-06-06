@@ -18,11 +18,11 @@ module RackDAV
     end
 
     def url_escape(s)
-      URI.escape(s)
+      ::URI.escape(s)
     end
 
     def url_unescape(s)
-      URI.unescape(s).force_valid_encoding
+      ::Rack::Utils.unescape(s).force_valid_encoding
     end
 
     def options
