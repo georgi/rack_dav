@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = ["README.md"]
 
-  s.add_dependency("rack", "~> 1.4")
+  s.add_dependency("rack", ">= 1.4", "< 3.0")
   s.add_dependency('nokogiri', "~> 1.5")
   s.add_dependency("ffi-xattr", "~> 0.1")
   s.add_development_dependency("rspec", "~> 2.11")
