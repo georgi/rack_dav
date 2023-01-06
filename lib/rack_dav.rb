@@ -3,7 +3,6 @@ require 'time'
 require 'uri'
 require 'rexml/document'
 require 'nokogiri'
-require 'webrick/httputils'
 
 require 'rack'
 require 'rack_dav/http_status'

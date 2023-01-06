@@ -6,6 +6,9 @@ module RackDAV
     attr_reader :options
 
 
+    ALLOWED_METHODS = %w(GET PUT POST DELETE PROPFIND PROPPATCH MKCOL COPY MOVE OPTIONS HEAD LOCK UNLOCK)
+
+
     # Initializes a new instance with given options.
     #
     # @param  [Hash] options Hash of options to customize the handler behavior.
@@ -27,7 +30,12 @@ module RackDAV
 
       begin
         controller = Controller.new(request, response, @options)
-        controller.send(request.request_method.downcase)
+        if ALLOWED_METHODS.include?(request.request_method)
+          controller.send(request.request_method.downcase)
+        else
+          response.status = 405
+          response['Allow'] = ALLOWED_METHODS.join(', ')
+        end
 
       rescue HTTPStatus::Status => status
         response.status = status.code

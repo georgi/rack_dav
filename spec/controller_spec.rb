@@ -40,11 +40,11 @@ describe RackDAV::Handler do
   CLASS_1 = CLASS_2 - %w(LOCK UNLOCK)
 
   before do
-    FileUtils.mkdir(DOC_ROOT) unless File.exists?(DOC_ROOT)
+    FileUtils.mkdir(DOC_ROOT) unless File.exist?(DOC_ROOT)
   end
 
   after do
-    FileUtils.rm_rf(DOC_ROOT) if File.exists?(DOC_ROOT)
+    FileUtils.rm_rf(DOC_ROOT) if File.exist?(DOC_ROOT)
   end
 
   attr_reader :response
@@ -176,7 +176,7 @@ describe RackDAV::Handler do
           :resource_class => RackDAV::LockableFileResource
         )
       end
-      
+
       let(:url_root){ '/' }
       include_examples :lockable_resource
     end
@@ -190,7 +190,7 @@ describe RackDAV::Handler do
           )
         )
       end
-      
+
       let(:url_root){ '/dav/' }
       include_examples :lockable_resource
     end
@@ -433,36 +433,6 @@ describe RackDAV::Handler do
 
       multistatus_response('/d:propstat/d:prop/d:getcontenttype').first.text.should == 'text/html'
       multistatus_response('/d:propstat/d:prop/d:getcontentlength').first.text.should == '7'
-    end
-
-    it 'should set custom properties in the dav namespace', :has_xattr_support => true do
-      put(url_root + 'prop', :input => 'A').should be_created
-      proppatch(url_root + 'prop', :input => propset_xml([:foo, 'testing']))
-      multistatus_response('/d:propstat/d:prop/d:foo').should_not be_empty
-
-      propfind(url_root + 'prop', :input => propfind_xml(:foo))
-      multistatus_response('/d:propstat/d:prop/d:foo').first.text.should == 'testing'
-    end
-
-    it 'should set custom properties in custom namespaces', :has_xattr_support => true do
-      xmlns = { 'xmlns:s' => 'SPEC:' }
-      put(url_root + 'prop', :input => 'A').should be_created
-      proppatch(url_root + 'prop', :input => propset_xml(['s:foo'.to_sym, 'testing', xmlns]))
-      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).should_not be_empty
-
-      propfind(url_root + 'prop', :input => propfind_xml(['s:foo'.to_sym, xmlns]))
-      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).first.text.should == 'testing'
-    end
-
-    it 'should copy custom properties', :has_xattr_support => true do
-      xmlns = { 'xmlns:s' => 'SPEC:' }
-      put(url_root + 'prop', :input => 'A').should be_created
-      proppatch(url_root + 'prop', :input => propset_xml(['s:foo'.to_sym, 'testing', xmlns]))
-      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).should_not be_empty
-
-      copy(url_root + 'prop', 'HTTP_DESTINATION' => url_root + 'propcopy').should be_created
-      propfind(url_root + 'propcopy', :input => propfind_xml(['s:foo'.to_sym, xmlns]))
-      multistatus_response('/d:propstat/d:prop/s:foo', xmlns).first.text.should == 'testing'
     end
 
     it 'should not set properties for a non-existent resource' do

@@ -9,6 +9,8 @@ module RackDAV
 
     attr_reader :request, :response, :resource
 
+    @@uri = URI::RFC2396_Parser.new
+
     def initialize(request, response, options)
       @request  = request
       @response = response
@@ -18,11 +20,11 @@ module RackDAV
     end
 
     def url_escape(s)
-      URI.escape(s)
+      @@uri.escape(s)
     end
 
     def url_unescape(s)
-      URI.unescape(s).force_valid_encoding
+      @@uri.unescape(s).force_valid_encoding
     end
 
     def options

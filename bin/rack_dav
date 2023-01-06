@@ -3,11 +3,13 @@
 $:.unshift(File.expand_path("../../lib", __FILE__))
 
 require 'rack_dav'
+require 'puma'
+require 'rack/handler/puma'
 
 root=ARGV[1] || Dir.pwd
 port = ARGV[0] || 3000
 
-app = Rack::Builder.new do 
+app = Rack::Builder.new do
   use Rack::ShowExceptions
   use Rack::CommonLogger
   use Rack::Reloader
@@ -17,8 +19,4 @@ app = Rack::Builder.new do
 
 end.to_app
 
-begin
-  Rack::Handler::Mongrel.run(app, :Port => port)
-rescue LoadError
-  Rack::Handler::WEBrick.run(app, :Port => port)
-end
+Rack::Handler::Puma.run(app, :Port => port)
