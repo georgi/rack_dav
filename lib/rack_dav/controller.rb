@@ -63,7 +63,7 @@ module RackDAV
       map_exceptions do
         resource.put
       end
-      response.status = Created
+      response.status = Created.to_i
     end
 
     def post
@@ -78,7 +78,7 @@ module RackDAV
       delete_recursive(resource, errors = [])
 
       if errors.empty?
-        response.status = NoContent
+        response.status = NoContent.to_i
       else
         multistatus do |xml|
           response_errors(xml, errors)
@@ -94,7 +94,7 @@ module RackDAV
       map_exceptions do
         resource.make_collection
       end
-      response.status = Created
+      response.status = Created.to_i
     end
 
     def copy
@@ -116,7 +116,7 @@ module RackDAV
       copy_recursive(resource, dest, depth, errors = [])
 
       if errors.empty?
-        response.status = dest_existed ? NoContent : Created
+        response.status = dest_existed ? NoContent.to_i : Created.to_i
       else
         multistatus do |xml|
           response_errors(xml, errors)
@@ -147,7 +147,7 @@ module RackDAV
       delete_recursive(resource, errors)
 
       if errors.empty?
-        response.status = dest_existed ? NoContent : Created
+        response.status = dest_existed ? NoContent.to_i : Created.to_i
       else
         multistatus do |xml|
           response_errors(xml, errors)
@@ -243,7 +243,7 @@ module RackDAV
       locktoken = request_locktoken('LOCK_TOKEN')
       raise BadRequest if locktoken.nil?
 
-      response.status = resource.unlock(locktoken) ? NoContent : Forbidden
+      response.status = resource.unlock(locktoken) ? NoContent.to_i : Forbidden.to_i
     end
 
     private

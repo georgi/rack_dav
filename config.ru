@@ -5,9 +5,9 @@ app = Rack::Builder.new do
   use Rack::ShowExceptions
   use Rack::CommonLogger
   use Rack::Reloader
-  use Rack::Lint
+  # use Rack::Lint
 
-  run RackDAV::Handler.new(:root => File.expand_path(".", __FILE__))
+  run RackDAV::Handler.new(:root => ".")
 
 end.to_app
 
