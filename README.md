@@ -2,30 +2,17 @@
 RackDAV - Web Authoring for Rack
 ---
 
-RackDAV is Handler for [Rack][1], which allows content authoring over
-HTTP. RackDAV brings its own file backend, but other backends are
-possible by subclassing RackDAV::Resource.
-
-## Install
-
-Just install the gem from RubyGems:
-
-    $ gem install rack_dav
+RackDAV is a Ruby gem that allows you to use the WebDAV protocol to edit and manage files over HTTP. It comes with its own file backend, but you can also create your own backend by subclassing RackDAV::Resource.
 
 ## Quickstart
 
-If you just want to share a folder over WebDAV, you can just start a
-simple server with:
+To install the gem, run `gem install rack_dav`.
 
-    $ rack_dav
-
-This will start a WEBrick server on port 3000, which you can connect
-to without authentication.
+To quickly test out RackDAV, copy the config.ru file from this repository and run `bundle exec rackup`. This will start a web server on a default port that you can connect to without any authentication.
 
 ## Rack Handler
 
-Using RackDAV inside a rack application is quite easy. A simple rackup
-script looks like this:
+To use RackDAV in your own rack application, include the following in your config.ru file:
 
     require 'rubygems'
     require 'rack_dav'
@@ -36,18 +23,7 @@ script looks like this:
 
 ## Implementing your own WebDAV resource
 
-RackDAV::Resource is an abstract base class and defines an interface
-for accessing resources.
-
-Each resource will be initialized with a path, which should be used to
-find the real resource.
-
-RackDAV::Handler needs to be initialized with the actual resource class:
-
-    RackDAV::Handler.new(:resource_class => MyResource)
-
-RackDAV needs some information about the resources, so you have to
-implement following methods:
+If you want to create your own WebDAV resource, you will need to subclass RackDAV::Resource and implement the following methods:
 
 * __children__: If this is a collection, return the child resources.
 
@@ -66,10 +42,6 @@ implement following methods:
 * __content_type__: Return the mime type of this resource.
 
 * __content\_length__: Return the size in bytes for this resource.
-
-
-Most importantly you have to implement the actions, which are called
-to retrieve and change the resources:
 
 * __get(request, response)__: Write the content of the resource to the response.body.
 
@@ -94,18 +66,6 @@ to retrieve and change the resources:
 
 * __unlock(token)__: Unlock this resource
 
-Note, that it is generally possible, that a resource object is
-instantiated for a not yet existing resource.
+Note that it is possible that a resource object may be instantiated for a resource that does not yet exist.
 
-For inspiration you should have a look at the FileResource
-implementation. Please let me now, if you are going to implement a new
-type of resource.
-
-
-### RackDAV on GitHub
-
-Download or fork the project on its [Github page][2]
-
-
-[1]: http://github.com/chneukirchen/rack
-[2]: http://github.com/georgi/rack_dav
+For more examples and inspiration, you can look at the FileResource implementation.
