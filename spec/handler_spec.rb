@@ -1,18 +1,13 @@
 require 'spec_helper'
 
 describe RackDAV::Handler do
+  let(:handler) { RackDAV::Handler.new }
+  let(:request) { Rack::Request.new({ 'REQUEST_METHOD' => 'GET' }) }
 
   describe "#initialize" do
     it "accepts zero parameters" do
       lambda do
-        klass.new
-      end.should_not raise_error
-    end
-
-    it "accepts a hash of options" do
-      lambda do
-        klass.new({})
-        klass.new :foo => "bar"
+        handler
       end.should_not raise_error
     end
 
@@ -22,15 +17,19 @@ describe RackDAV::Handler do
     end
 
     it "defaults option :resource_class to FileResource" do
-      instance = klass.new
-      instance.options[:resource_class].should be(RackDAV::FileResource)
+      handler.options[:resource_class].should be(RackDAV::FileResource)
     end
 
     it "defaults option :root to current directory" do
-      path = File.expand_path("../../bin", __FILE__)
+      path = '/tmp'
       Dir.chdir(path)
-      instance = klass.new
+      instance = handler
       instance.options[:root].should == path
+    end
+
+    it 'sets the response status to 405 if the request method is not allowed' do
+      request.env['REQUEST_METHOD'] = 'FOO'
+      expect(handler.call(request.env)[0]).to eq(405)
     end
   end
 

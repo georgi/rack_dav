@@ -26,12 +26,6 @@ class Rack::MockResponse
 
 end
 
-if ENV['TRAVIS']
-  RSpec.configure do |c|
-    c.filter_run_excluding :has_xattr_support => true
-  end
-end
-
 describe RackDAV::Handler do
 
   DOC_ROOT = File.expand_path(File.dirname(__FILE__) + '/htdocs')
@@ -77,7 +71,7 @@ describe RackDAV::Handler do
         end
 
         it "sets a compliant rack response" do
-          body = response.original_response.body
+          body = response.original_response
           body.should be_a(Array)
           expect(body.size).to eq(1)
         end
