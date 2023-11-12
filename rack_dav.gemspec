@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.md"]
 
   s.add_dependency("rack", "~> 3.0.0")
-  s.add_dependency("rackup", "~> 0.2.3")
+  s.add_dependency("rackup", "~> 2.1")
   s.add_dependency("rexml", "~> 3.2.4")
   s.add_dependency('nokogiri', "~> 1.5")
   s.add_dependency('webrick', "~> 1.3")
