@@ -151,7 +151,7 @@ module RackDAV
       tempfile = "#{file_path}.#{Process.pid}.#{object_id}"
 
       open(tempfile, "wb") do |file|
-        while part = io.read(8192)
+        while io && (part = io.read(8192))
           file << part
         end
       end
