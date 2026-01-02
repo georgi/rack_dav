@@ -12,17 +12,20 @@ Gem::Specification.new do |s|
   s.description   = "WebDAV handler for Rack."
   s.license       = "MIT"
 
+  s.required_ruby_version = ">= 3.0"
+
   s.files         = `git ls-files`.split("\n")
   s.require_paths = ["lib"]
 
   s.extra_rdoc_files = ["README.md"]
 
-  s.add_dependency("rack", "~> 3.0.0")
-  s.add_dependency("rackup", "~> 0.2.3")
-  s.add_dependency("rexml", "~> 3.2.4")
+  s.add_dependency("rack", "~> 3.0")
+  s.add_dependency("rackup", "~> 0.2")
+  s.add_dependency("rexml", "~> 3.2")
   s.add_dependency('nokogiri', "~> 1.5")
   s.add_dependency('webrick', "~> 1.3")
   s.add_dependency('puma', "~> 6.0")
-  s.add_development_dependency("rspec", "~> 3.4.0")
-  s.add_development_dependency("rake","~> 13.0")
+  s.add_development_dependency("rspec", "~> 3.4")
+  s.add_development_dependency("rake", "~> 13.0")
+  s.add_development_dependency("rubocop", "~> 1.50")
 end
